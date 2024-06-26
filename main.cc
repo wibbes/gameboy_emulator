@@ -3,6 +3,6 @@
 
 int main(int argc, char *argv[]) {
   Cartridge cartridge;
-  CPU cpu(cartridge.data);
+  CPU cpu(&cartridge.data);
   return 0;
 }
