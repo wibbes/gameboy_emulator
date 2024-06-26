@@ -1,8 +1,7 @@
 #include <fstream>
-#include <iostream>
-#include <string>
 #include <vector>
 #include <filesystem>
+
 class Cartridge {
 public:
   std::vector<uint8_t> data;
