@@ -19,7 +19,7 @@ public:
         reg_af_(std::make_pair(&reg_a_, &reg_f_)), 
         reg_bc_(std::make_pair(&reg_b_, &reg_c_)), 
         reg_de_(std::make_pair(&reg_d_, &reg_e_)),
-        reg_hl_(std::make_pair(&reg_h_, &reg_l_)), mmu(std::make_unique<MMU>(cartridge)) {}
+        reg_hl_(std::make_pair(&reg_h_, &reg_l_)), mmu(std::make_unique<MMU>(&cartridge)) {}
   ~CPU() = default;
 
 private:

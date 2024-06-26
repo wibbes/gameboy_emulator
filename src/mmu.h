@@ -7,7 +7,7 @@
 class MMU {
 public:
   std::vector<uint8_t> memory_;
-  MMU(std::vector<uint8_t> cart) : memory_(cart){};
+  MMU(std::vector<uint8_t>* cart) : memory_(*cart){};
   ~MMU() = default;
 };
 
