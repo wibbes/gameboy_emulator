@@ -1,22 +1,14 @@
 #ifndef GAMEBOY_EMULATOR_SRC_CPU_H_
 #define GAMEBOY_EMULATOR_SRC_CPU_H_
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <utility>
 
 #include "mmu.h"
-
-class Instruction {
-private:
-  uint8_t opcode_, length_, cycles_;
-  std::string mnemonic_;
-  Instruction(uint8_t opcode, std::string mnemonic, uint8_t length,
-              uint8_t cycles)
-      : opcode_(opcode), mnemonic_(mnemonic), length_(length), cycles_(cycles) {
-  }
-};
+#include "instructions.h"
 
 class CPU {
 public:
@@ -31,15 +23,13 @@ public:
         reg_bc_(std::make_pair(&reg_b_, &reg_c_)),
         reg_de_(std::make_pair(&reg_d_, &reg_e_)),
         reg_hl_(std::make_pair(&reg_h_, &reg_l_)),
-        mmu(std::make_unique<MMU>(cartridge)) {}
+        mmu(std::make_unique<MMU>(cartridge)){}
   ~CPU() = default;
 
   void Run();
   void Fetch();
   void Decode(uint8_t opcode);
   void Execute(Instruction instruction);
-
-  std::vector<Instruction> instructions_{};
 
 private:
 };
