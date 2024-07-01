@@ -10,8 +10,8 @@ public:
   MMU(std::vector<uint8_t>* cart) : memory_(*cart){};
   ~MMU() = default;
 
-  void set(uint16_t address, uint8_t value);
-  uint8_t get(uint16_t address);
+  void WriteMemory(uint16_t address, uint8_t value);
+  uint8_t ReadMemory(uint16_t address);
 };
 
 #endif
