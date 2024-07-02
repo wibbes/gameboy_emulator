@@ -16,6 +16,7 @@ public:
 
 const static std::vector<Instruction> instructions{
     Instruction(0x00, "NOP", 0, 0),
+    Instruction(0x02, "LD BC,d16", 3, 12),
     Instruction(0x02, "LD (BC),A", 1, 8),
     Instruction(0x03, "INC BC", 1, 8),
     Instruction(0x04, "INC B", 1, 4),
