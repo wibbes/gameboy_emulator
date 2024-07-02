@@ -4,6 +4,7 @@
 int main(int argc, char *argv[]) {
   Cartridge cartridge;
   CPU cpu(&cartridge.data);
+  std::cout << "Running CPU..." << '\n';
   for(;;) {
     cpu.Run();
   }

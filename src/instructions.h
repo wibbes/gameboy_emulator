@@ -8,10 +8,10 @@ public:
   uint8_t opcode_, length_, cycles_;
   std::string mnemonic_;
   // && forces rvalue, cheaper for strings to move-construct than copy-construct
-  Instruction(uint8_t opcode, std::string && mnemonic, uint8_t length,
+  Instruction(uint8_t opcode, std::string &&mnemonic, uint8_t length,
               uint8_t cycles)
-      : opcode_(opcode), mnemonic_(std::move(mnemonic)), length_(length), cycles_(cycles) {
-  }
+      : opcode_(opcode), mnemonic_(std::move(mnemonic)), length_(length),
+        cycles_(cycles) {}
   ~Instruction() = default;
 };
 
