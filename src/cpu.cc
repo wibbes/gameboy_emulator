@@ -1,26 +1,36 @@
 #include "cpu.h"
 
-uint16_t Register16::GetRegister() { return *high << 8 | (*low & 0x00FF); }
+uint16_t Register16::GetRegister() { return *high_ << 8 | (*low_ & 0x00FF); }
 
 void Register16::SetRegister(uint16_t value) {
-  *high = value >> 8;
-  *low = static_cast<uint8_t>(value & 0x00FF);
+  *high_ = value >> 8;
+  *low_ = static_cast<uint8_t>(value & 0x00FF);
 }
-
-void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
-
-void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
 
 const uint16_t MakeWord(uint8_t high, uint8_t low) {
   return static_cast<uint16_t>(high << 8 | low & 0x00FF);
 }
+void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
+
+void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
+
+void CPU::PUSH(uint16_t value) {
+  mmu_->WriteMemory(reg_sp_ - 1, static_cast<uint8_t>((value >> 8) & 0xFF));
+  mmu_->WriteMemory(reg_sp_ - 2, static_cast<uint8_t>(value & 0xFF));
+  reg_sp_ -= 2;
+}
+
+void CPU::POP(Register16 reg) {
+  reg.SetRegister(MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_ + 2)));
+  reg_sp_ += 2;
+}
 
 void CPU::Run() { Fetch(); }
 
-void CPU::Fetch() { Decode(mmu->ReadMemory(reg_pc_++)); }
+void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
 
 void CPU::Decode(uint8_t opcode) {
-  std::cout << instructions.at(opcode).mnemonic_ << ", ";
+  if(opcode != 0x00) std::cout << instructions.at(opcode).mnemonic_ << '\n';
   Execute(instructions.at(opcode));
 }
 
@@ -28,85 +38,85 @@ void CPU::Execute(Instruction instruction) {
   switch (instruction.opcode_) {
   case 0x01: // LD BC, d16
     LD(*reg_bc_,
-       MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1)));
+       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     reg_pc_ += 2;
     break;
   case 0x02: // LD (BC), A
-    mmu->WriteMemory(reg_bc_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_bc_->GetRegister(), reg_a_);
     break;
   case 0x06: // LD B, d8
-    LD(&reg_b_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_b_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x08: // LD (a16), SP
-    mmu->WriteMemory(
-        MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1)),
+    mmu_->WriteMemory(
+        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)),
         reg_sp_ & 0xFF);
-    mmu->WriteMemory(
-        MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1)) +
+    mmu_->WriteMemory(
+        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) +
             1,
         (reg_sp_ & 0xFF00) >> 8);
     reg_pc_ += 2;
     break;
   case 0x0A: // LD A, (BC)
-    LD(&reg_a_, mmu->ReadMemory(reg_bc_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_bc_->GetRegister()));
     break;
   case 0x0E: // LD C, d8
-    LD(&reg_e_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x11: // LD DE, d16
     LD(*reg_de_,
-       MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1)));
+       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     reg_pc_ += 2;
     break;
   case 0x12: // LD (DE), A
-    mmu->WriteMemory(reg_de_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_de_->GetRegister(), reg_a_);
     break;
   case 0x16: // LD D, d8
-    LD(&reg_d_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_d_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x1A: // LD A, (DE)
-    LD(&reg_a_, mmu->ReadMemory(reg_de_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_de_->GetRegister()));
     break;
   case 0x1E: // LD E, d8
-    LD(&reg_e_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x21: // LD HL, d16
     LD(*reg_hl_,
-       MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1)));
+       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     reg_pc_ += 2;
     break;
   case 0x22: // LD (HL+), A
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
     reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
     break;
   case 0x26: // LD H, d8
-    LD(&reg_h_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_h_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x2A: // LD A, (HL+)
-    LD(&reg_a_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
     break;
   case 0x2E: // LD L, d8
-    LD(&reg_l_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_l_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x31: // LD SP, d16
     reg_sp_ =
-        MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1));
+        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
     reg_pc_ += 2;
     break;
   case 0x32: // LD (HL-), A
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
     reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
     break;
   case 0x36: // LD (HL), d8
-    mmu->WriteMemory(reg_hl_->GetRegister(), mmu->ReadMemory(++reg_pc_));
+    mmu_->WriteMemory(reg_hl_->GetRegister(), mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x3A: // LD A, (HL-)
-    LD(&reg_a_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
     break;
   case 0x3E: // LD A, d8
-    LD(&reg_a_, mmu->ReadMemory(++reg_pc_));
+    LD(&reg_a_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x40: // LD B, B
     LD(&reg_b_, reg_b_);
@@ -127,7 +137,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_b_, reg_l_);
     break;
   case 0x46: // LD B, (HL)
-    LD(&reg_b_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_b_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x47: // LD B, A
     LD(&reg_b_, reg_a_);
@@ -151,7 +161,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_c_, reg_l_);
     break;
   case 0x4E: // LD C, (HL)
-    LD(&reg_c_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_c_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x4F: // LD C, A
     LD(&reg_c_, reg_a_);
@@ -175,7 +185,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_d_, reg_l_);
     break;
   case 0x56: // LD D, (HL)
-    LD(&reg_d_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_d_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x57: // LD D, A
     LD(&reg_d_, reg_a_);
@@ -199,7 +209,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_e_, reg_l_);
     break;
   case 0x5E: // LD E, (HL)
-    LD(&reg_e_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_e_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x5F: // LD E, A
     LD(&reg_e_, reg_a_);
@@ -223,7 +233,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_h_, reg_l_);
     break;
   case 0x66: // LD H, (HL)
-    LD(&reg_h_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_h_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x67: // LD H, A
     LD(&reg_h_, reg_a_);
@@ -247,37 +257,37 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_l_, reg_l_);
     break;
   case 0x6E: // LD L, (HL)
-    LD(&reg_l_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_l_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x6F: // LD L, A
     LD(&reg_l_, reg_a_);
     break;
   case 0x70: // LD (HL), B
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_b_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_b_);
     reg_pc_ += 2;
     break;
   case 0x71: // LD (HL), C
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_c_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_c_);
     reg_pc_ += 2;
     break;
   case 0x72: // LD (HL), D
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_d_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_d_);
     reg_pc_ += 2;
     break;
   case 0x73: // LD (HL), E
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_e_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_e_);
     reg_pc_ += 2;
     break;
   case 0x74: // LD (HL), H
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_h_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_h_);
     reg_pc_ += 2;
     break;
   case 0x75: // LD (HL), L
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_l_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_l_);
     reg_pc_ += 2;
     break;
   case 0x77: // LD (HL), A
-    mmu->WriteMemory(reg_hl_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
     reg_pc_ += 2;
     break;
   case 0x78: // LD A, B
@@ -299,26 +309,26 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_a_, reg_l_);
     break;
   case 0x7E: // LD A, (HL)
-    LD(&reg_a_, mmu->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     break;
   case 0x7F: // LD A, A
     LD(&reg_a_, reg_a_);
     break;
   case 0xE2: // LD (C), A
     // MSB == 0xFF, so the possible range is 0xFF00 - 0xFFFF
-    mmu->WriteMemory(MakeWord(0xFF, reg_c_), reg_a_);
+    mmu_->WriteMemory(MakeWord(0xFF, reg_c_), reg_a_);
     break;
   case 0xEA: // LD (a16), A
-    mmu->WriteMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
-                     reg_a_);
+    mmu_->WriteMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
+                      reg_a_);
     reg_pc_ += 2;
     break;
   case 0xF2: // LD A, (C)
-    LD(&reg_a_, mmu->ReadMemory(MakeWord(0xFF, reg_c_)));
+    LD(&reg_a_, mmu_->ReadMemory(MakeWord(0xFF, reg_c_)));
     break;
   case 0xFA: // LD A, (a16)
-    LD(&reg_a_, mmu->ReadMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2),
-                                         mmu->ReadMemory(reg_pc_ + 1))));
+    LD(&reg_a_, mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2),
+                                          mmu_->ReadMemory(reg_pc_ + 1))));
     break;
   default:
     break;
