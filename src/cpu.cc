@@ -19,9 +19,9 @@ void CPU::Run() { Fetch(); }
 
 void CPU::Fetch() { Decode(mmu->ReadMemory(reg_pc_++)); }
 
-void CPU::Decode(uint8_t opcode) { 
-  std::cout << instructions.at(opcode).mnemonic_ << '\t';
-  Execute(instructions.at(opcode)); 
+void CPU::Decode(uint8_t opcode) {
+  std::cout << instructions.at(opcode).mnemonic_ << ", ";
+  Execute(instructions.at(opcode));
 }
 
 void CPU::Execute(Instruction instruction) {
@@ -309,14 +309,16 @@ void CPU::Execute(Instruction instruction) {
     mmu->WriteMemory(MakeWord(0xFF, reg_c_), reg_a_);
     break;
   case 0xEA: // LD (a16), A
-    mmu->WriteMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2), reg_pc_ + 1), reg_a_);
+    mmu->WriteMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
+                     reg_a_);
     reg_pc_ += 2;
     break;
   case 0xF2: // LD A, (C)
     LD(&reg_a_, mmu->ReadMemory(MakeWord(0xFF, reg_c_)));
     break;
   case 0xFA: // LD A, (a16)
-    LD(&reg_a_, mmu->ReadMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2), mmu->ReadMemory(reg_pc_ + 1))));
+    LD(&reg_a_, mmu->ReadMemory(MakeWord(mmu->ReadMemory(reg_pc_ + 2),
+                                         mmu->ReadMemory(reg_pc_ + 1))));
     break;
   default:
     break;
