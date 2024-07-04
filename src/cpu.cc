@@ -10,6 +10,10 @@ void Register16::SetRegister(uint16_t value) {
 const uint16_t MakeWord(uint8_t high, uint8_t low) {
   return static_cast<uint16_t>(high << 8 | low & 0x00FF);
 }
+
+bool CPU::GetFlag(uint8_t flag) {
+  return static_cast<bool>((reg_f_ >> flag) & 0x01);
+} 
 void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
 
 void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
@@ -21,8 +25,28 @@ void CPU::PUSH(uint16_t value) {
 }
 
 void CPU::POP(Register16 reg) {
-  reg.SetRegister(MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_ + 2)));
+  reg.SetRegister(
+      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_ + 2)));
   reg_sp_ += 2;
+}
+
+void CPU::RST(uint8_t jmp_vector) {
+  PUSH(reg_pc_ + 1);
+  reg_pc_ = static_cast<uint16_t>(rst_jump_vectors[jmp_vector]);
+}
+
+void CPU::JP() {
+  reg_pc_ =
+      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+}
+
+void CPU::JP(uint8_t condition) {
+  bool flag = condition & 0x10 ? GetFlag(flag_c_) : GetFlag(flag_z_);
+  if(flag & condition) { 
+    JP();
+  } else { // If its a zero flag
+    ++reg_pc_;
+  }
 }
 
 void CPU::Run() { Fetch(); }
@@ -30,7 +54,8 @@ void CPU::Run() { Fetch(); }
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
 
 void CPU::Decode(uint8_t opcode) {
-  if(opcode != 0x00) std::cout << instructions.at(opcode).mnemonic_ << '\n';
+  if (opcode != 0x00)
+    std::cout << instructions.at(opcode).mnemonic_ << '\n';
   Execute(instructions.at(opcode));
 }
 
