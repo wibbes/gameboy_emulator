@@ -53,8 +53,9 @@ public:
 
   void RST(uint8_t jmp_vector);
   void JP();
+  void JP_HL();
   void JP(uint8_t condition);
-
+  void JR();
 private:
 };
 

@@ -13,7 +13,7 @@ const uint16_t MakeWord(uint8_t high, uint8_t low) {
 
 bool CPU::GetFlag(uint8_t flag) {
   return static_cast<bool>((reg_f_ >> flag) & 0x01);
-} 
+}
 void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
 
 void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
@@ -42,11 +42,19 @@ void CPU::JP() {
 
 void CPU::JP(uint8_t condition) {
   bool flag = condition & 0x10 ? GetFlag(flag_c_) : GetFlag(flag_z_);
-  if(flag & condition) { 
+  if (flag & condition) {
     JP();
   } else { // If its a zero flag
     ++reg_pc_;
   }
+}
+
+void CPU::JP_HL() {
+  reg_pc_ = reg_hl_->GetRegister();
+}
+
+void CPU::JR() {
+  reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
 }
 
 void CPU::Run() { Fetch(); }
