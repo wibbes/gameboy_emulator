@@ -14,6 +14,11 @@ const uint16_t MakeWord(uint8_t high, uint8_t low) {
 bool CPU::GetFlag(uint8_t flag) {
   return static_cast<bool>((reg_f_ >> flag) & 0x01);
 }
+
+void CPU::SetFlag(uint8_t flag) { *reg_af_->low_ |= (0x01 << flag); }
+
+void CPU::ClearFlag(uint8_t flag) { *reg_af_->low_ &= ~(0x01 << flag); }
+
 void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
 
 void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
@@ -49,12 +54,26 @@ void CPU::JP(uint8_t condition) {
   }
 }
 
-void CPU::JP_HL() {
-  reg_pc_ = reg_hl_->GetRegister();
-}
+void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister(); }
 
 void CPU::JR() {
   reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
+}
+
+void CPU::RET() {
+  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
+}
+
+void CPU::CALL() {
+  reg_pc_ += 2;
+  mmu_->WriteMemory(reg_sp_ - 1, static_cast<uint8_t>((reg_pc_ >> 8) & 0xFF));
+  mmu_->WriteMemory(reg_sp_ - 2, static_cast<uint8_t>(reg_pc_ & 0xFF));
+  reg_pc_ =
+      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+  reg_sp_ -= 2;
+}
+
+void CPU::BIT(uint8_t bit, uint8_t reg) {
 }
 
 void CPU::Run() { Fetch(); }

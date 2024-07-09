@@ -39,7 +39,11 @@ public:
         reg_hl_(std::make_unique<Register16>(&reg_h_, &reg_l_)),
         mmu_(std::make_unique<MMU>(cartridge)) {}
   ~CPU() = default;
+  
   bool GetFlag(uint8_t flag);
+  void SetFlag(uint8_t flag);
+  void ClearFlag(uint8_t flag);
+
   void Run();
   void Fetch();
   void Decode(uint8_t opcode);
@@ -56,6 +60,11 @@ public:
   void JP_HL();
   void JP(uint8_t condition);
   void JR();
+  void RET();
+  void CALL();
+
+  void BIT(uint8_t bit, uint8_t reg);
+  
 private:
 };
 
