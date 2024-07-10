@@ -44,6 +44,9 @@ public:
   void SetFlag(uint8_t flag);
   void ClearFlag(uint8_t flag);
 
+  uint8_t GetBit(uint8_t reg, uint8_t bit);
+  void SetBit(uint8_t& reg, uint8_t bit);
+
   void Run();
   void Fetch();
   void Decode(uint8_t opcode);
@@ -63,7 +66,7 @@ public:
   void RET();
   void CALL();
 
-  void BIT(uint8_t bit, uint8_t reg);
+  void BIT(uint8_t reg, uint8_t bit);
   
 private:
 };

@@ -15,6 +15,14 @@ bool CPU::GetFlag(uint8_t flag) {
   return static_cast<bool>((reg_f_ >> flag) & 0x01);
 }
 
+uint8_t CPU::GetBit(uint8_t reg, uint8_t bit){
+  return (reg & (1 << bit)) >> bit;
+}
+
+void CPU::SetBit(uint8_t &reg, uint8_t bit) {
+  reg |= (0x01 << bit);
+}
+
 void CPU::SetFlag(uint8_t flag) { *reg_af_->low_ |= (0x01 << flag); }
 
 void CPU::ClearFlag(uint8_t flag) { *reg_af_->low_ &= ~(0x01 << flag); }
@@ -73,7 +81,10 @@ void CPU::CALL() {
   reg_sp_ -= 2;
 }
 
-void CPU::BIT(uint8_t bit, uint8_t reg) {
+void CPU::BIT(uint8_t reg, uint8_t bit) {
+  GetBit(reg, bit) == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  SetFlag(flag_c_);
 }
 
 void CPU::Run() { Fetch(); }
