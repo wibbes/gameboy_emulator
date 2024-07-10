@@ -15,13 +15,11 @@ bool CPU::GetFlag(uint8_t flag) {
   return static_cast<bool>((reg_f_ >> flag) & 0x01);
 }
 
-uint8_t CPU::GetBit(uint8_t reg, uint8_t bit){
+uint8_t CPU::GetBit(uint8_t reg, uint8_t bit) {
   return (reg & (1 << bit)) >> bit;
 }
 
-void CPU::SetBit(uint8_t &reg, uint8_t bit) {
-  reg |= (0x01 << bit);
-}
+void CPU::SetBit(uint8_t &reg, uint8_t bit) { reg |= (0x01 << bit); }
 
 void CPU::SetFlag(uint8_t flag) { *reg_af_->low_ |= (0x01 << flag); }
 
@@ -87,21 +85,17 @@ void CPU::BIT(uint8_t reg, uint8_t bit) {
   SetFlag(flag_c_);
 }
 
-void CPU::INC(Register16 reg) {
-  reg.SetRegister(reg.GetRegister() + 1);
-}
+void CPU::INC(Register16 reg) { reg.SetRegister(reg.GetRegister() + 1); }
 
-void CPU::INC(uint8_t &reg) {
-  ++reg;
-}
+void CPU::INC(uint8_t &reg) { ++reg; }
 
-void CPU::DEC(Register16 reg) {
-  reg.SetRegister(reg.GetRegister() + 1);
-}
+void CPU::DEC(Register16 reg) { reg.SetRegister(reg.GetRegister() + 1); }
 
-void CPU::DEC(uint8_t &reg) {
-  --reg;
-}
+void CPU::DEC(uint8_t &reg) { --reg; }
+
+void CPU::AND(uint8_t &reg) { reg_a_ &= reg; }
+void CPU::OR(uint8_t &reg) { reg_a_ |= reg; }
+void CPU::XOR(uint8_t &reg) { reg_a_ ^= reg; }
 
 void CPU::Run() { Fetch(); }
 

@@ -72,7 +72,11 @@ public:
   void INC(uint8_t &reg);
   void DEC(Register16 reg);
   void DEC(uint8_t &reg);
-
+  
+  void AND(uint8_t& reg);
+  void OR(uint8_t& reg);
+  void XOR(uint8_t& reg);
+  
 private:
 };
 
