@@ -87,6 +87,22 @@ void CPU::BIT(uint8_t reg, uint8_t bit) {
   SetFlag(flag_c_);
 }
 
+void CPU::INC(Register16 reg) {
+  reg.SetRegister(reg.GetRegister() + 1);
+}
+
+void CPU::INC(uint8_t &reg) {
+  ++reg;
+}
+
+void CPU::DEC(Register16 reg) {
+  reg.SetRegister(reg.GetRegister() + 1);
+}
+
+void CPU::DEC(uint8_t &reg) {
+  --reg;
+}
+
 void CPU::Run() { Fetch(); }
 
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }

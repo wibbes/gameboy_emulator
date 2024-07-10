@@ -39,13 +39,13 @@ public:
         reg_hl_(std::make_unique<Register16>(&reg_h_, &reg_l_)),
         mmu_(std::make_unique<MMU>(cartridge)) {}
   ~CPU() = default;
-  
+
   bool GetFlag(uint8_t flag);
   void SetFlag(uint8_t flag);
   void ClearFlag(uint8_t flag);
 
   uint8_t GetBit(uint8_t reg, uint8_t bit);
-  void SetBit(uint8_t& reg, uint8_t bit);
+  void SetBit(uint8_t &reg, uint8_t bit);
 
   void Run();
   void Fetch();
@@ -67,7 +67,12 @@ public:
   void CALL();
 
   void BIT(uint8_t reg, uint8_t bit);
-  
+
+  void INC(Register16 reg);
+  void INC(uint8_t &reg);
+  void DEC(Register16 reg);
+  void DEC(uint8_t &reg);
+
 private:
 };
 
