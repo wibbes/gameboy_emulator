@@ -46,6 +46,7 @@ public:
 
   uint8_t GetBit(uint8_t reg, uint8_t bit);
   void SetBit(uint8_t &reg, uint8_t bit);
+  void ClearBit(uint8_t & reg, uint8_t bit);
 
   void Run();
   void Fetch();

@@ -21,6 +21,8 @@ uint8_t CPU::GetBit(uint8_t reg, uint8_t bit) {
 
 void CPU::SetBit(uint8_t &reg, uint8_t bit) { reg |= (0x01 << bit); }
 
+void CPU::ClearBit(uint8_t &reg, uint8_t bit) { reg &= ~(0x01 << bit); }
+
 void CPU::SetFlag(uint8_t flag) { *reg_af_->low_ |= (0x01 << flag); }
 
 void CPU::ClearFlag(uint8_t flag) { *reg_af_->low_ &= ~(0x01 << flag); }
@@ -190,6 +192,45 @@ void CPU::RRC(uint8_t &reg, bool extended) {
   if (extended && reg == 0) {
     SetFlag(flag_z_);
   }
+}
+
+void CPU::SLA(uint8_t &reg) {
+  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg <<= 1;
+  ClearBit(reg, 0);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+}
+
+void CPU::SRA(uint8_t &reg) {
+  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  if((reg & 0x80) != 0) {
+    reg >>= 1;
+    reg |= 0x80;
+  } else {
+    reg >>= 1;
+  }
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+}
+
+void CPU::SRL(uint8_t &reg) {
+  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg >>= 1;
+  ClearBit(reg, 7);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+}
+
+void CPU::SWAP(uint8_t &reg) {
+  reg = ((reg & 0x0F) << 4) | ((reg & 0xF0) >> 4);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  ClearFlag(flag_c_);
 }
 
 void CPU::Run() { Fetch(); }
