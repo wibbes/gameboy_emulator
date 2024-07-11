@@ -138,6 +138,60 @@ void CPU::CP(uint8_t &reg) {
   reg_a_ < reg ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
+void CPU::RL(uint8_t &reg, bool extended) {
+  uint8_t carry = GetFlag(flag_c_);
+  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg <<= 1;
+  reg |= carry;
+  ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  if (extended && reg == 0) {
+    SetFlag(flag_z_);
+  }
+}
+
+void CPU::RR(uint8_t &reg, bool extended) {
+  uint8_t carry = GetFlag(flag_c_);
+  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg >>= 1;
+  carry ? reg |= 0x80 : reg |= 0;
+  ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  if (extended && reg == 0) {
+    SetFlag(flag_z_);
+  }
+}
+
+void CPU::RLC(uint8_t &reg, bool extended) {
+  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  reg <<= 1;
+  if (GetFlag(flag_c_)) {
+    reg |= 0x01;
+  }
+  if (extended && reg == 0) {
+    SetFlag(flag_z_);
+  }
+}
+
+void CPU::RRC(uint8_t &reg, bool extended) {
+  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  reg >>= 1;
+  if (GetFlag(flag_c_)) {
+    reg |= 0x80;
+  }
+  if (extended && reg == 0) {
+    SetFlag(flag_z_);
+  }
+}
+
 void CPU::Run() { Fetch(); }
 
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
