@@ -28,6 +28,7 @@ public:
   uint16_t reg_sp_, reg_pc_;
   std::unique_ptr<Register16> reg_af_, reg_bc_, reg_de_, reg_hl_;
   std::unique_ptr<MMU> mmu_;
+  bool ime, halted;
   CPU(std::vector<uint8_t> *cartridge)
       : flag_z_(0x07), flag_n_(0x06), flag_h_(0x05), flag_c_(0x04),
         rst_jump_vectors({0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38}),
@@ -37,7 +38,7 @@ public:
         reg_bc_(std::make_unique<Register16>(&reg_b_, &reg_c_)),
         reg_de_(std::make_unique<Register16>(&reg_d_, &reg_e_)),
         reg_hl_(std::make_unique<Register16>(&reg_h_, &reg_l_)),
-        mmu_(std::make_unique<MMU>(cartridge)) {}
+        mmu_(std::make_unique<MMU>(cartridge)),ime(false), halted(false) {}
   ~CPU() = default;
 
   bool GetFlag(uint8_t flag);
@@ -92,6 +93,16 @@ public:
   void ADC(uint8_t &reg);
   void SUB(uint8_t &reg);
   void SBC(uint8_t &reg);
+
+  void DAA();
+  void CPL();
+  void NOP();
+  void CCF();
+  void SCF();
+  void DI();
+  void EI();
+  void HALT();
+  void STOP();
 
 private:
 };

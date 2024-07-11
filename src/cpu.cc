@@ -247,22 +247,22 @@ void CPU::ADD(uint8_t &reg) {
 void CPU::ADC(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
   int8_t eval = reg_a_ + (reg + carry);
-	int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
-	reg_a_ = eval;
-	reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-	ClearFlag(flag_n_);
-	((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-	((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+  reg_a_ = eval;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
 void CPU::SUB(uint8_t &reg) {
   int8_t eval = reg_a_ - reg;
-	int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
-	reg_a_ = eval;
-	reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-	SetFlag(flag_n_);
-	((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-	((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+  reg_a_ = eval;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  SetFlag(flag_n_);
+  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
 void CPU::SBC(uint8_t &reg) {
@@ -276,13 +276,53 @@ void CPU::SBC(uint8_t &reg) {
   ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
+void CPU::DAA() {
+
+} 
+
+void CPU::CPL() {
+  reg_a_ = ~reg_a_;
+  SetFlag(flag_n_);
+  SetFlag(flag_h_);
+}
+
+void CPU::NOP() {
+  return;
+}
+
+void CPU::CCF() {
+  reg_a_ ^= (0x01 << flag_c_);
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+}
+
+void CPU::SCF() {
+  SetFlag(flag_c_);
+}
+
+void CPU::DI() {
+  ime = false;
+}
+
+void CPU::EI() {
+  ime = true;
+}
+
+void CPU::HALT() {
+  halted = true;
+}
+
+void CPU::STOP() {
+  // Before calling this...
+  //  - reset interrupt enable
+  //  - reset I/O
+}
+
 void CPU::Run() { Fetch(); }
 
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
 
-void CPU::Decode(uint8_t opcode) {
-  Execute(instructions.at(opcode));
-}
+void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
   switch (instruction.opcode_) {
