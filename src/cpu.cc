@@ -205,7 +205,7 @@ void CPU::SLA(uint8_t &reg) {
 
 void CPU::SRA(uint8_t &reg) {
   (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
-  if((reg & 0x80) != 0) {
+  if ((reg & 0x80) != 0) {
     reg >>= 1;
     reg |= 0x80;
   } else {
@@ -233,13 +233,54 @@ void CPU::SWAP(uint8_t &reg) {
   ClearFlag(flag_c_);
 }
 
+void CPU::ADD(uint8_t &reg) {
+  uint8_t carry = GetFlag(flag_c_);
+  int8_t eval = reg_a_ + reg;
+  int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+  reg_a_ = eval;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
+
+void CPU::ADC(uint8_t &reg) {
+  uint8_t carry = GetFlag(flag_c_);
+  int8_t eval = reg_a_ + (reg + carry);
+	int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+	reg_a_ = eval;
+	reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+	ClearFlag(flag_n_);
+	((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+	((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
+
+void CPU::SUB(uint8_t &reg) {
+  int8_t eval = reg_a_ - reg;
+	int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+	reg_a_ = eval;
+	reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+	SetFlag(flag_n_);
+	((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+	((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
+
+void CPU::SBC(uint8_t &reg) {
+  uint8_t carry = GetFlag(flag_c_);
+  int8_t eval = reg_a_ - (reg + carry);
+  int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+  reg_a_ = eval;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  SetFlag(flag_n_);
+  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
+
 void CPU::Run() { Fetch(); }
 
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
 
 void CPU::Decode(uint8_t opcode) {
-  if (opcode != 0x00)
-    std::cout << instructions.at(opcode).mnemonic_ << '\n';
   Execute(instructions.at(opcode));
 }
 

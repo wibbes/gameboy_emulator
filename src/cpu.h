@@ -46,7 +46,7 @@ public:
 
   uint8_t GetBit(uint8_t reg, uint8_t bit);
   void SetBit(uint8_t &reg, uint8_t bit);
-  void ClearBit(uint8_t & reg, uint8_t bit);
+  void ClearBit(uint8_t &reg, uint8_t bit);
 
   void Run();
   void Fetch();
@@ -87,6 +87,11 @@ public:
   void SRA(uint8_t &reg);
   void SRL(uint8_t &reg);
   void SWAP(uint8_t &reg);
+
+  void ADD(uint8_t &reg);
+  void ADC(uint8_t &reg);
+  void SUB(uint8_t &reg);
+  void SBC(uint8_t &reg);
 
 private:
 };
