@@ -85,17 +85,58 @@ void CPU::BIT(uint8_t reg, uint8_t bit) {
   SetFlag(flag_c_);
 }
 
-void CPU::INC(Register16 reg) { reg.SetRegister(reg.GetRegister() + 1); }
+void CPU::INC(Register16 reg) {
+  reg.SetRegister(reg.GetRegister() + 1);
+  // instruction does not change registers
+}
 
-void CPU::INC(uint8_t &reg) { ++reg; }
+void CPU::INC(uint8_t &reg) {
+  ++reg;
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+}
 
-void CPU::DEC(Register16 reg) { reg.SetRegister(reg.GetRegister() + 1); }
+void CPU::DEC(Register16 reg) {
+  reg.SetRegister(reg.GetRegister() + 1);
+  // instruction does not change registers
+}
 
-void CPU::DEC(uint8_t &reg) { --reg; }
+void CPU::DEC(uint8_t &reg) {
+  --reg;
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  SetFlag(flag_n_);
+  (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+}
 
-void CPU::AND(uint8_t &reg) { reg_a_ &= reg; }
-void CPU::OR(uint8_t &reg) { reg_a_ |= reg; }
-void CPU::XOR(uint8_t &reg) { reg_a_ ^= reg; }
+void CPU::AND(uint8_t &reg) {
+  reg_a_ &= reg;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_h_);
+  SetFlag(flag_n_);
+  ClearFlag(flag_c_);
+}
+void CPU::OR(uint8_t &reg) {
+  reg_a_ |= reg;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_h_);
+  SetFlag(flag_n_);
+  ClearFlag(flag_c_);
+}
+void CPU::XOR(uint8_t &reg) {
+  reg_a_ ^= reg;
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_h_);
+  SetFlag(flag_n_);
+  ClearFlag(flag_c_);
+}
+void CPU::CP(uint8_t &reg) {
+  reg_a_ == reg ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  SetFlag(flag_n_);
+  ((reg_a_ - reg) & 0x0F) > (reg_a_ & 0x0F) ? SetFlag(flag_h_)
+                                            : ClearFlag(flag_h_);
+  reg_a_ < reg ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
 
 void CPU::Run() { Fetch(); }
 
