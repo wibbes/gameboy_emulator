@@ -277,8 +277,23 @@ void CPU::SBC(uint8_t &reg) {
 }
 
 void CPU::DAA() {
-
-} 
+  if (!GetFlag(flag_n_)) {
+    if (GetFlag(flag_c_) || reg_a_ > 0x99) {
+      reg_a_ += 0x60;
+      SetFlag(flag_c_);
+    }
+    if (GetFlag(flag_h_) || (reg_a_ & 0x0F) > 0x09) {
+      reg_a_ += 0x06;
+    }
+  } else {
+    if (GetFlag(flag_c_))
+      reg_a_ -= 0x60;
+    if(GetFlag(flag_h_))
+      reg_a_ -=0x06;
+  }
+  ClearFlag(flag_h_);
+  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+}
 
 void CPU::CPL() {
   reg_a_ = ~reg_a_;
@@ -286,9 +301,7 @@ void CPU::CPL() {
   SetFlag(flag_h_);
 }
 
-void CPU::NOP() {
-  return;
-}
+void CPU::NOP() { return; }
 
 void CPU::CCF() {
   reg_a_ ^= (0x01 << flag_c_);
@@ -296,21 +309,13 @@ void CPU::CCF() {
   ClearFlag(flag_h_);
 }
 
-void CPU::SCF() {
-  SetFlag(flag_c_);
-}
+void CPU::SCF() { SetFlag(flag_c_); }
 
-void CPU::DI() {
-  ime = false;
-}
+void CPU::DI() { ime = false; }
 
-void CPU::EI() {
-  ime = true;
-}
+void CPU::EI() { ime = true; }
 
-void CPU::HALT() {
-  halted = true;
-}
+void CPU::HALT() { halted = true; }
 
 void CPU::STOP() {
   // Before calling this...
