@@ -562,13 +562,16 @@ void CPU::Execute(Instruction instruction) {
     --reg_sp_;
     break;
   case 0x3C:
+    INC(reg_a_);
     break;
   case 0x3D:
+    DEC(reg_a_);
     break;
   case 0x3E:
     LD(&reg_a_, mmu_->ReadMemory(++reg_pc_));
     break;
   case 0x3F:
+    CCF();
     break;
   case 0x40: // LD B, B
     LD(&reg_b_, reg_b_);
@@ -730,6 +733,9 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x75: // LD (HL), L
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_l_);
+    break;
+  case 0x76:
+    HALT();
     break;
   case 0x77: // LD (HL), A
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
