@@ -72,8 +72,10 @@ public:
 
   void INC(Register16 reg);
   void INC(uint8_t &reg);
+  void INC_HL();
   void DEC(Register16 reg);
   void DEC(uint8_t &reg);
+  void DEC_HL();
 
   void AND(uint8_t &reg);
   void OR(uint8_t &reg);
@@ -90,6 +92,7 @@ public:
   void SWAP(uint8_t &reg);
 
   void ADD(uint8_t &reg);
+  void ADD_HL(uint16_t value);
   void ADC(uint8_t &reg);
   void SUB(uint8_t &reg);
   void SBC(uint8_t &reg);

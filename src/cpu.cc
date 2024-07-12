@@ -99,6 +99,14 @@ void CPU::INC(uint8_t &reg) {
   (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
 }
 
+void CPU::INC_HL() {
+  uint8_t eval = reg_hl_->GetRegister() + 1;
+  eval == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  (eval & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  reg_hl_->SetRegister(eval);
+}
+
 void CPU::DEC(Register16 reg) {
   reg.SetRegister(reg.GetRegister() + 1);
   // instruction does not change registers
@@ -109,6 +117,14 @@ void CPU::DEC(uint8_t &reg) {
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   SetFlag(flag_n_);
   (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+}
+
+void CPU::DEC_HL() {
+  uint8_t eval = mmu_->ReadMemory(reg_hl_->GetRegister() + 1);
+  eval == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  SetFlag(flag_n_);
+  (eval & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  reg_hl_->SetRegister(eval);
 }
 
 void CPU::AND(uint8_t &reg) {
@@ -244,6 +260,16 @@ void CPU::ADD(uint8_t &reg) {
   ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
+void CPU::ADD_HL(uint16_t value) {
+  int16_t eval = reg_hl_->GetRegister() + value;
+  int test_carries =
+      static_cast<int16_t>(reg_hl_->GetRegister() ^ value ^ eval);
+  ClearFlag(flag_n_);
+  ((test_carries & 0x1000) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  ((test_carries & 0x10000) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_hl_->SetRegister(eval);
+}
+
 void CPU::ADC(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
   int8_t eval = reg_a_ + (reg + carry);
@@ -288,8 +314,8 @@ void CPU::DAA() {
   } else {
     if (GetFlag(flag_c_))
       reg_a_ -= 0x60;
-    if(GetFlag(flag_h_))
-      reg_a_ -=0x06;
+    if (GetFlag(flag_h_))
+      reg_a_ -= 0x06;
   }
   ClearFlag(flag_h_);
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
@@ -331,16 +357,30 @@ void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
   switch (instruction.opcode_) {
-  case 0x01: // LD BC, d16
+  case 0x00:
+    NOP();
+    break;
+  case 0x01:
     LD(*reg_bc_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
-    reg_pc_ += 2;
     break;
   case 0x02: // LD (BC), A
     mmu_->WriteMemory(reg_bc_->GetRegister(), reg_a_);
     break;
+  case 0x03:
+    INC(*reg_bc_);
+    break;
+  case 0x04:
+    INC(reg_b_);
+    break;
+  case 0x05:
+    DEC(reg_b_);
+    break;
   case 0x06: // LD B, d8
     LD(&reg_b_, mmu_->ReadMemory(++reg_pc_));
+    break;
+  case 0x07:
+    RLC(reg_a_);
     break;
   case 0x08: // LD (a16), SP
     mmu_->WriteMemory(
@@ -350,68 +390,185 @@ void CPU::Execute(Instruction instruction) {
         MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) +
             1,
         (reg_sp_ & 0xFF00) >> 8);
-    reg_pc_ += 2;
     break;
-  case 0x0A: // LD A, (BC)
+  case 0x09:
+    mmu_->WriteMemory(mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2),
+                                                mmu_->ReadMemory(reg_pc_ + 1))),
+                      reg_sp_);
+    break;
+  case 0x0A:
     LD(&reg_a_, mmu_->ReadMemory(reg_bc_->GetRegister()));
     break;
-  case 0x0E: // LD C, d8
+  case 0x0B:
+    DEC(*reg_bc_);
+    break;
+  case 0x0C:
+    INC(reg_c_);
+    break;
+  case 0x0D:
+    DEC(reg_c_);
+    break;
+  case 0x0E:
     LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x11: // LD DE, d16
+  case 0x0F:
+    RRC(reg_a_);
+    break;
+  case 0x10:
+    STOP();
+    break;
+  case 0x11:
     LD(*reg_de_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
-    reg_pc_ += 2;
     break;
-  case 0x12: // LD (DE), A
+  case 0x12:
     mmu_->WriteMemory(reg_de_->GetRegister(), reg_a_);
     break;
-  case 0x16: // LD D, d8
+  case 0x13:
+    INC(*reg_de_);
+    break;
+  case 0x14:
+    INC(reg_d_);
+    break;
+  case 0x15:
+    DEC(reg_d_);
+    break;
+  case 0x16:
     LD(&reg_d_, mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x1A: // LD A, (DE)
+  case 0x17:
+    RL(reg_a_);
+    break;
+  case 0x18:
+    JR();
+    break;
+  case 0x19:
+    ADD_HL(reg_de_->GetRegister());
+    break;
+  case 0x1A:
     LD(&reg_a_, mmu_->ReadMemory(reg_de_->GetRegister()));
     break;
-  case 0x1E: // LD E, d8
+  case 0x1B:
+    DEC(*reg_de_);
+    break;
+  case 0x1C:
+    INC(reg_e_);
+    break;
+  case 0x1D:
+    DEC(reg_e_);
+    break;
+  case 0x1E:
     LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x21: // LD HL, d16
+  case 0x1F:
+    RR(reg_a_);
+    break;
+  case 0x20:
+    if (!GetFlag(flag_z_)) {
+      JR();
+    }
+    break;
+  case 0x21:
     LD(*reg_hl_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
-    reg_pc_ += 2;
     break;
-  case 0x22: // LD (HL+), A
+  case 0x22:
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
     reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
     break;
-  case 0x26: // LD H, d8
+  case 0x23:
+    INC(*reg_hl_);
+    break;
+  case 0x24:
+    INC(reg_h_);
+    break;
+  case 0x25:
+    DEC(reg_h_);
+    break;
+  case 0x26:
     LD(&reg_h_, mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x2A: // LD A, (HL+)
+  case 0x27:
+    DAA();
+    break;
+  case 0x28:
+    if (GetFlag(flag_z_)) {
+      JR();
+    }
+    break;
+  case 0x29:
+    ADD_HL(reg_hl_->GetRegister());
+    break;
+  case 0x2A:
     LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
     break;
-  case 0x2E: // LD L, d8
+  case 0x2B:
+    DEC(*reg_hl_);
+    break;
+  case 0x2C:
+    INC(reg_l_);
+    break;
+  case 0x2D:
+    DEC(reg_l_);
+    break;
+  case 0x2E:
     LD(&reg_l_, mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x31: // LD SP, d16
+  case 0x2F:
+    CPL();
+    break;
+  case 0x30:
+    if (!GetFlag(flag_c_)) {
+      JR();
+    }
+    break;
+  case 0x31:
     reg_sp_ =
         MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
-    reg_pc_ += 2;
     break;
-  case 0x32: // LD (HL-), A
+  case 0x32:
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
     reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
     break;
-  case 0x36: // LD (HL), d8
+  case 0x33:
+    ++reg_sp_;
+    break;
+  case 0x34:
+    INC_HL();
+    break;
+  case 0x35:
+    DEC_HL();
+    break;
+  case 0x36:
     mmu_->WriteMemory(reg_hl_->GetRegister(), mmu_->ReadMemory(++reg_pc_));
     break;
-  case 0x3A: // LD A, (HL-)
+  case 0x37:
+    SCF();
+    break;
+  case 0x38:
+    if (GetFlag(flag_c_)) {
+      JR();
+    }
+    break;
+  case 0x39:
+    ADD_HL(reg_sp_);
+    break;
+  case 0x3A:
     LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
     reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
     break;
-  case 0x3E: // LD A, d8
+  case 0x3B:
+    --reg_sp_;
+    break;
+  case 0x3C:
+    break;
+  case 0x3D:
+    break;
+  case 0x3E:
     LD(&reg_a_, mmu_->ReadMemory(++reg_pc_));
+    break;
+  case 0x3F:
     break;
   case 0x40: // LD B, B
     LD(&reg_b_, reg_b_);
@@ -451,7 +608,6 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x4C: // LD C, H
     LD(&reg_c_, reg_h_);
-    break;
   case 0x4D: // LD C, L
     LD(&reg_c_, reg_l_);
     break;
@@ -559,31 +715,24 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x70: // LD (HL), B
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_b_);
-    reg_pc_ += 2;
     break;
   case 0x71: // LD (HL), C
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_c_);
-    reg_pc_ += 2;
     break;
   case 0x72: // LD (HL), D
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_d_);
-    reg_pc_ += 2;
     break;
   case 0x73: // LD (HL), E
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_e_);
-    reg_pc_ += 2;
     break;
   case 0x74: // LD (HL), H
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_h_);
-    reg_pc_ += 2;
     break;
   case 0x75: // LD (HL), L
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_l_);
-    reg_pc_ += 2;
     break;
   case 0x77: // LD (HL), A
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
-    reg_pc_ += 2;
     break;
   case 0x78: // LD A, B
     LD(&reg_a_, reg_b_);
@@ -609,23 +758,271 @@ void CPU::Execute(Instruction instruction) {
   case 0x7F: // LD A, A
     LD(&reg_a_, reg_a_);
     break;
-  case 0xE2: // LD (C), A
+  case 0x80:
+    break;
+  case 0x81:
+    break;
+  case 0x82:
+    break;
+  case 0x83:
+    break;
+  case 0x84:
+    break;
+  case 0x85:
+    break;
+  case 0x86:
+    break;
+  case 0x87:
+    break;
+  case 0x88:
+    break;
+  case 0x89:
+    break;
+  case 0x8A:
+    break;
+  case 0x8B:
+    break;
+  case 0x8C:
+    break;
+  case 0x8D:
+    break;
+  case 0x8E:
+    break;
+  case 0x8F:
+    break;
+  case 0x90:
+    break;
+  case 0x91:
+    break;
+  case 0x92:
+    break;
+  case 0x93:
+    break;
+  case 0x94:
+    break;
+  case 0x95:
+    break;
+  case 0x96:
+    break;
+  case 0x97:
+    break;
+  case 0x98:
+    break;
+  case 0x99:
+    break;
+  case 0x9A:
+    break;
+  case 0x9B:
+    break;
+  case 0x9C:
+    break;
+  case 0x9D:
+    break;
+  case 0x9E:
+    break;
+  case 0x9F:
+    break;
+  case 0xA0:
+    break;
+  case 0xA1:
+    break;
+  case 0xA2:
+    break;
+  case 0xA3:
+    break;
+  case 0xA4:
+    break;
+  case 0xA5:
+    break;
+  case 0xA6:
+    break;
+  case 0xA7:
+    break;
+  case 0xA8:
+    break;
+  case 0xA9:
+    break;
+  case 0xAA:
+    break;
+  case 0xAB:
+    break;
+  case 0xAC:
+    break;
+  case 0xAD:
+    break;
+  case 0xAE:
+    break;
+  case 0xAF:
+    break;
+  case 0xB0:
+    break;
+  case 0xB1:
+    break;
+  case 0xB2:
+    break;
+  case 0xB3:
+    break;
+  case 0xB4:
+    break;
+  case 0xB5:
+    break;
+  case 0xB6:
+    break;
+  case 0xB7:
+    break;
+  case 0xB8:
+    break;
+  case 0xB9:
+    break;
+  case 0xBA:
+    break;
+  case 0xBB:
+    break;
+  case 0xBC:
+    break;
+  case 0xBD:
+    break;
+  case 0xBE:
+    break;
+  case 0xBF:
+    break;
+  case 0xC0:
+    break;
+  case 0xC1:
+    break;
+  case 0xC2:
+    break;
+  case 0xC3:
+    break;
+  case 0xC4:
+    break;
+  case 0xC5:
+    break;
+  case 0xC6:
+    break;
+  case 0xC7:
+    break;
+  case 0xC8:
+    break;
+  case 0xC9:
+    break;
+  case 0xCA:
+    break;
+  case 0xCB:
+    break;
+  case 0xCC:
+    break;
+  case 0xCD:
+    break;
+  case 0xCE:
+    break;
+  case 0xCF:
+    break;
+  case 0xD0:
+    break;
+  case 0xD1:
+    break;
+  case 0xD2:
+    break;
+  case 0xD3:
+    break;
+  case 0xD4:
+    break;
+  case 0xD5:
+    break;
+  case 0xD6:
+    break;
+  case 0xD7:
+    break;
+  case 0xD8:
+    break;
+  case 0xD9:
+    break;
+  case 0xDA:
+    break;
+  case 0xDB:
+    break;
+  case 0xDC:
+    break;
+  case 0xDD:
+    break;
+  case 0xDE:
+    break;
+  case 0xDF:
+    break;
+  case 0xE0:
+    break;
+  case 0xE1:
+    break;
+  case 0xE2:
     // MSB == 0xFF, so the possible range is 0xFF00 - 0xFFFF
     mmu_->WriteMemory(MakeWord(0xFF, reg_c_), reg_a_);
     break;
-  case 0xEA: // LD (a16), A
+  case 0xE3:
+    break;
+  case 0xE4:
+    break;
+  case 0xE5:
+    break;
+  case 0xE6:
+    break;
+  case 0xE7:
+    break;
+  case 0xE8:
+    break;
+  case 0xE9:
+    break;
+  case 0xEA:
     mmu_->WriteMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
                       reg_a_);
-    reg_pc_ += 2;
     break;
-  case 0xF2: // LD A, (C)
+  case 0xEB:
+    break;
+  case 0xEC:
+    break;
+  case 0xED:
+    break;
+  case 0xEE:
+    break;
+  case 0xEF:
+    break;
+  case 0xF0:
+    break;
+  case 0xF1:
+    break;
+  case 0xF2:
     LD(&reg_a_, mmu_->ReadMemory(MakeWord(0xFF, reg_c_)));
     break;
-  case 0xFA: // LD A, (a16)
+  case 0xF3:
+    break;
+  case 0xF4:
+    break;
+  case 0xF5:
+    break;
+  case 0xF6:
+    break;
+  case 0xF7:
+    break;
+  case 0xF8:
+    break;
+  case 0xF9:
+    break;
+  case 0xFA:
     LD(&reg_a_, mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2),
                                           mmu_->ReadMemory(reg_pc_ + 1))));
+    break;
+  case 0xFB:
+    break;
+  case 0xFC:
+    break;
+  case 0xFD:
+    break;
+  case 0xFE:
+    break;
+  case 0xFF:
     break;
   default:
     break;
   }
+  reg_pc_ += instruction.length_;
 }
