@@ -93,6 +93,7 @@ public:
 
   void ADD(uint8_t &reg);
   void ADD_HL(uint16_t value);
+  void ADD_SP();
   void ADC(uint8_t &reg);
   void SUB(uint8_t &reg);
   void SBC(uint8_t &reg);

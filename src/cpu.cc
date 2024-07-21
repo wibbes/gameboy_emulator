@@ -270,6 +270,17 @@ void CPU::ADD_HL(uint16_t value) {
   reg_hl_->SetRegister(eval);
 }
 
+void CPU::ADD_SP() {
+  int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
+  int eval = reg_sp_ + immediate;
+  int test_carries = reg_sp_ ^ immediate ^ eval;
+  reg_sp_ = eval;
+  ClearFlag(flag_z_);
+  ClearFlag(flag_n_);
+  (test_carries & 0x10) != 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  (test_carries & 0x100) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+}
+
 void CPU::ADC(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
   int8_t eval = reg_a_ + (reg + carry);
@@ -765,200 +776,347 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_a_, reg_a_);
     break;
   case 0x80:
+    ADD(reg_b_);
     break;
   case 0x81:
+    ADD(reg_c_);
     break;
   case 0x82:
+    ADD(reg_d_);
     break;
   case 0x83:
+    ADD(reg_e_);
     break;
   case 0x84:
+    ADD(reg_h_);
     break;
   case 0x85:
+    ADD(reg_l_);
     break;
-  case 0x86:
+  case 0x86: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    ADD(byte);
     break;
+  }
   case 0x87:
+    ADD(reg_a_);
     break;
   case 0x88:
+    ADC(reg_b_);
     break;
   case 0x89:
+    ADC(reg_c_);
     break;
   case 0x8A:
+    ADC(reg_d_);
     break;
   case 0x8B:
+    ADC(reg_e_);
     break;
   case 0x8C:
+    ADC(reg_h_);
     break;
   case 0x8D:
+    ADC(reg_l_);
     break;
-  case 0x8E:
+  case 0x8E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    ADC(byte);
     break;
+  }
   case 0x8F:
+    ADC(reg_a_);
     break;
   case 0x90:
+    SUB(reg_b_);
     break;
   case 0x91:
+    SUB(reg_c_);
     break;
   case 0x92:
+    SUB(reg_d_);
     break;
   case 0x93:
+    SUB(reg_e_);
     break;
   case 0x94:
+    SUB(reg_h_);
     break;
   case 0x95:
+    SUB(reg_l_);
     break;
-  case 0x96:
+  case 0x96: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SUB(byte);
     break;
+  }
   case 0x97:
+    SUB(reg_a_);
     break;
   case 0x98:
+    SBC(reg_b_);
     break;
   case 0x99:
+    SBC(reg_c_);
     break;
   case 0x9A:
+    SBC(reg_d_);
     break;
   case 0x9B:
+    SBC(reg_e_);
     break;
   case 0x9C:
+    SBC(reg_h_);
     break;
   case 0x9D:
+    SBC(reg_l_);
     break;
-  case 0x9E:
+  case 0x9E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SBC(byte);
     break;
+  }
   case 0x9F:
+    SBC(reg_b_);
     break;
   case 0xA0:
+    AND(reg_b_);
     break;
   case 0xA1:
+    AND(reg_c_);
     break;
   case 0xA2:
+    AND(reg_d_);
     break;
   case 0xA3:
+    AND(reg_e_);
     break;
   case 0xA4:
+    AND(reg_h_);
     break;
   case 0xA5:
+    AND(reg_l_);
     break;
-  case 0xA6:
+  case 0xA6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    AND(byte);
     break;
+  }
   case 0xA7:
+    AND(reg_a_);
     break;
   case 0xA8:
+    XOR(reg_b_);
     break;
   case 0xA9:
+    XOR(reg_c_);
     break;
   case 0xAA:
+    XOR(reg_d_);
     break;
   case 0xAB:
+    XOR(reg_e_);
     break;
   case 0xAC:
+    XOR(reg_h_);
     break;
   case 0xAD:
+    XOR(reg_l_);
     break;
-  case 0xAE:
+  case 0xAE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    XOR(byte);
     break;
+  }
   case 0xAF:
+    XOR(reg_a_);
     break;
   case 0xB0:
+    OR(reg_b_);
     break;
   case 0xB1:
+    OR(reg_c_);
     break;
   case 0xB2:
+    OR(reg_d_);
     break;
   case 0xB3:
+    OR(reg_e_);
     break;
   case 0xB4:
+    OR(reg_h_);
     break;
   case 0xB5:
+    OR(reg_l_);
     break;
-  case 0xB6:
+  case 0xB6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    OR(byte);
     break;
+  }
   case 0xB7:
+    OR(reg_a_);
     break;
   case 0xB8:
+    CP(reg_b_);
     break;
   case 0xB9:
+    CP(reg_c_);
     break;
   case 0xBA:
+    CP(reg_d_);
     break;
   case 0xBB:
+    CP(reg_e_);
     break;
   case 0xBC:
+    CP(reg_h_);
     break;
   case 0xBD:
+    CP(reg_l_);
     break;
-  case 0xBE:
+  case 0xBE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    CP(byte);
     break;
+  }
   case 0xBF:
+    CP(reg_a_);
     break;
   case 0xC0:
+    if (!GetFlag(flag_z_)) {
+      RET();
+    }
     break;
   case 0xC1:
+    POP(*reg_bc_);
     break;
   case 0xC2:
+    if (!GetFlag(flag_z_)) {
+      JP();
+    }
     break;
   case 0xC3:
+    JP();
     break;
   case 0xC4:
+    if (!GetFlag(flag_z_)) {
+      CALL();
+    }
     break;
   case 0xC5:
+    PUSH(reg_bc_->GetRegister());
     break;
-  case 0xC6:
+  case 0xC6: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    ADD(byte);
     break;
+  }
   case 0xC7:
+    RST(rst_jump_vectors[0]);
     break;
   case 0xC8:
+    if (GetFlag(flag_z_)) {
+      RET();
+    }
     break;
   case 0xC9:
+    RET();
     break;
   case 0xCA:
+    if (GetFlag(flag_z_)) {
+      JP();
+    }
     break;
   case 0xCB:
+    // Extended instruciton prefix
     break;
   case 0xCC:
+    if (GetFlag(flag_z_)) {
+      CALL();
+    }
     break;
   case 0xCD:
+    CALL();
     break;
-  case 0xCE:
+  case 0xCE: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    ADC(byte);
     break;
+  }
   case 0xCF:
+    RST(rst_jump_vectors[1]);
     break;
   case 0xD0:
+    if (!GetFlag(flag_c_)) {
+      RET();
+    }
     break;
   case 0xD1:
+    POP(*reg_de_);
     break;
   case 0xD2:
+    if (!GetFlag(flag_c_)) {
+      JP();
+    }
     break;
   case 0xD3:
     break;
   case 0xD4:
+    if (!GetFlag(flag_c_)) {
+      CALL();
+    }
     break;
   case 0xD5:
+    PUSH(reg_de_->GetRegister());
     break;
-  case 0xD6:
+  case 0xD6: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    SUB(byte);
     break;
+  }
   case 0xD7:
+    RST(rst_jump_vectors[3]);
     break;
   case 0xD8:
+    if (GetFlag(flag_c_)) {
+      RET();
+    }
     break;
   case 0xD9:
+    RET();
+    ime = false;
     break;
   case 0xDA:
+    if (GetFlag(flag_c_)) {
+      JP();
+    }
     break;
   case 0xDB:
     break;
   case 0xDC:
+    if (GetFlag(flag_c_)) {
+      CALL();
+    }
     break;
   case 0xDD:
     break;
-  case 0xDE:
+  case 0xDE: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    SBC(byte);
     break;
+  } break;
   case 0xDF:
+    RST(rst_jump_vectors[3]);
     break;
-  case 0xE0:
+  case 0xE0: {
+    uint16_t word =
+        static_cast<uint16_t>(0xFF00 + mmu_->ReadMemory(reg_pc_ + 1));
+    mmu_->WriteMemory(word, reg_a_);
     break;
+  }
   case 0xE1:
+    POP(*reg_hl_);
     break;
   case 0xE2:
     // MSB == 0xFF, so the possible range is 0xFF00 - 0xFFFF
@@ -969,14 +1127,21 @@ void CPU::Execute(Instruction instruction) {
   case 0xE4:
     break;
   case 0xE5:
+    PUSH(reg_hl_->GetRegister());
     break;
-  case 0xE6:
+  case 0xE6: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    AND(byte);
     break;
+  }
   case 0xE7:
+    RST(rst_jump_vectors[4]);
     break;
   case 0xE8:
+    ADD_SP();
     break;
   case 0xE9:
+    JP_HL();
     break;
   case 0xEA:
     mmu_->WriteMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
@@ -988,44 +1153,77 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xED:
     break;
-  case 0xEE:
+  case 0xEE: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    XOR(byte);
     break;
+  }
   case 0xEF:
+    RST(rst_jump_vectors[5]);
     break;
   case 0xF0:
+    if (mmu_->ReadMemory(reg_pc_ + 1) == 0x44) {
+      reg_a_ = 0x90;
+    } else {
+      uint16_t word =
+          static_cast<uint16_t>(0xFF00 + mmu_->ReadMemory(reg_pc_ + 1));
+      LD(&reg_a_, mmu_->ReadMemory(word));
+    }
     break;
   case 0xF1:
+    POP(*reg_af_);
+    *reg_af_->low_ &= 0xF0; // don't modify flags register
     break;
   case 0xF2:
     LD(&reg_a_, mmu_->ReadMemory(MakeWord(0xFF, reg_c_)));
     break;
   case 0xF3:
+    DI();
     break;
   case 0xF4:
     break;
   case 0xF5:
+    PUSH(reg_af_->GetRegister());
     break;
-  case 0xF6:
+  case 0xF6: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    OR(byte);
     break;
+  }
   case 0xF7:
+    RST(rst_jump_vectors[6]);
     break;
-  case 0xF8:
-    break;
+  case 0xF8: {
+    int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
+    int eval = reg_sp_ + immediate;
+    int test_carries = reg_sp_ ^ immediate ^ eval;
+    reg_hl_->SetRegister(reg_sp_ + immediate);
+    ClearFlag(flag_z_);
+    ClearFlag(flag_n_);
+    (test_carries & 0x10) != 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+    (test_carries & 0x100) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  }
   case 0xF9:
+    reg_sp_ = reg_hl_->GetRegister();
     break;
   case 0xFA:
     LD(&reg_a_, mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2),
                                           mmu_->ReadMemory(reg_pc_ + 1))));
     break;
   case 0xFB:
+    EI();
     break;
   case 0xFC:
     break;
   case 0xFD:
     break;
-  case 0xFE:
+  case 0xFE: {
+    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    CP(byte);
     break;
+  }
   case 0xFF:
+    RST(rst_jump_vectors[7]);
     break;
   default:
     break;
