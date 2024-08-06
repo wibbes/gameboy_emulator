@@ -69,7 +69,8 @@ void CPU::JR() {
 }
 
 void CPU::RET() {
-  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
+  reg_pc_ =
+      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
   reg_sp_ += 2;
 }
 
@@ -78,7 +79,8 @@ void CPU::CALL() {
   mmu_->WriteMemory(reg_sp_ - 1, static_cast<uint8_t>((reg_pc_ >> 8) & 0xFF));
   mmu_->WriteMemory(reg_sp_ - 2, static_cast<uint8_t>(reg_pc_ & 0xFF));
   reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) -
+      1;
   reg_sp_ -= 2;
 }
 
@@ -368,9 +370,10 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
-  if (instruction.mnemonic_ != "NOP")
-    std::cout << std::hex << "Name " << instruction.mnemonic_ << " PC "
-              << +reg_pc_ << '\n';
+    /* std::cout << std::hex << std::uppercase << instruction.mnemonic_ */
+    /*           << " Opcode " << +instruction.opcode_ << " " */
+    /*           << +mmu_->memory_[reg_pc_ + 1] << " " */
+    /*           << +mmu_->memory_[reg_pc_ + 2] << " PC " << +reg_pc_ << '\n'; */
   switch (instruction.opcode_) {
   case 0x00:
     NOP();
@@ -486,6 +489,7 @@ void CPU::Execute(Instruction instruction) {
   case 0x21:
     LD(*reg_hl_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+
     break;
   case 0x22:
     mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
@@ -1232,5 +1236,5 @@ void CPU::Execute(Instruction instruction) {
   default:
     break;
   }
-  reg_pc_++;
+  reg_pc_ += instruction.length_;
 }
