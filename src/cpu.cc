@@ -39,7 +39,7 @@ void CPU::PUSH(uint16_t value) {
 
 void CPU::POP(Register16 reg) {
   reg.SetRegister(
-      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_ + 2)));
+      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)));
   reg_sp_ += 2;
 }
 
@@ -70,6 +70,7 @@ void CPU::JR() {
 
 void CPU::RET() {
   reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
+  reg_sp_ += 2;
 }
 
 void CPU::CALL() {
@@ -362,11 +363,14 @@ void CPU::STOP() {
 
 void CPU::Run() { Fetch(); }
 
-void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_++)); }
+void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 
 void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
+  if (instruction.mnemonic_ != "NOP")
+    std::cout << std::hex << "Name " << instruction.mnemonic_ << " PC "
+              << +reg_pc_ << '\n';
   switch (instruction.opcode_) {
   case 0x00:
     NOP();
@@ -1228,5 +1232,5 @@ void CPU::Execute(Instruction instruction) {
   default:
     break;
   }
-  reg_pc_ += instruction.length_;
+  reg_pc_++;
 }
