@@ -51,6 +51,7 @@ void CPU::RST(uint8_t jmp_vector) {
 void CPU::JP() {
   reg_pc_ =
       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+  reg_pc_ -= 3;
 }
 
 void CPU::JP(uint8_t condition) {
@@ -69,8 +70,7 @@ void CPU::JR() {
 }
 
 void CPU::RET() {
-  reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
+  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
   reg_sp_ += 2;
 }
 
@@ -370,10 +370,12 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
-    /* std::cout << std::hex << std::uppercase << instruction.mnemonic_ */
-    /*           << " Opcode " << +instruction.opcode_ << " " */
-    /*           << +mmu_->memory_[reg_pc_ + 1] << " " */
-    /*           << +mmu_->memory_[reg_pc_ + 2] << " PC " << +reg_pc_ << '\n'; */
+  std::cout << std::hex << std::uppercase
+            << instruction.mnemonic_
+            << " Opcode: " << +instruction.opcode_ << " "
+            << +mmu_->memory_[reg_pc_ + 1] << " " << +mmu_->memory_[reg_pc_ + 2]
+            << " PC: " << +reg_pc_ << " Length: " << +instruction.length_
+            << '\n';
   switch (instruction.opcode_) {
   case 0x00:
     NOP();
@@ -427,7 +429,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_c_);
     break;
   case 0x0E:
-    LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_e_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x0F:
     RRC(reg_a_);
