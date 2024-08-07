@@ -119,7 +119,7 @@ void CPU::DEC(uint8_t &reg) {
   --reg;
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   SetFlag(flag_n_);
-  (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  (reg & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
 }
 
 void CPU::DEC_HL() {
