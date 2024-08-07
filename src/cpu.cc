@@ -58,9 +58,10 @@ void CPU::JP(uint8_t condition) {
   bool flag = condition & 0x10 ? GetFlag(flag_c_) : GetFlag(flag_z_);
   if (flag & condition) {
     JP();
-  } else { // If its a zero flag
-    ++reg_pc_;
-  }
+  } 
+  /* else { // If its a zero flag */
+  /*   ++reg_pc_; */
+  /* } */
 }
 
 void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister(); }
@@ -70,18 +71,13 @@ void CPU::JR() {
 }
 
 void CPU::RET() {
-  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_));
+  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)) - 1;
   reg_sp_ += 2;
 }
 
 void CPU::CALL() {
-  reg_pc_ += 2;
-  mmu_->WriteMemory(reg_sp_ - 1, static_cast<uint8_t>((reg_pc_ >> 8) & 0xFF));
-  mmu_->WriteMemory(reg_sp_ - 2, static_cast<uint8_t>(reg_pc_ & 0xFF));
-  reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) -
-      1;
-  reg_sp_ -= 2;
+  PUSH(reg_pc_ + 3);
+  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) - 3;
 }
 
 void CPU::BIT(uint8_t reg, uint8_t bit) {
