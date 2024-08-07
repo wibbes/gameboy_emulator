@@ -429,7 +429,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_c_);
     break;
   case 0x0E:
-    LD(&reg_e_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_c_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x0F:
     RRC(reg_a_);

@@ -32,8 +32,8 @@ public:
   CPU(std::vector<uint8_t> *cartridge)
       : flag_z_(0x07), flag_n_(0x06), flag_h_(0x05), flag_c_(0x04),
         rst_jump_vectors({0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38}),
-        reg_a_(0x10), reg_b_(0x0), reg_c_(0x0), reg_d_(0x0), reg_e_(0x0),
-        reg_f_(0x0), reg_h_(0x0), reg_l_(0x0), reg_sp_(0xFFFE), reg_pc_(0x0100),
+        reg_a_(0x01), reg_b_(0x0), reg_c_(0x13), reg_d_(0x0), reg_e_(0xD8),
+        reg_f_(0xB0), reg_h_(0x01), reg_l_(0x4D), reg_sp_(0xFFFE), reg_pc_(0x0100),
         reg_af_(std::make_unique<Register16>(&reg_a_, &reg_f_)),
         reg_bc_(std::make_unique<Register16>(&reg_b_, &reg_c_)),
         reg_de_(std::make_unique<Register16>(&reg_d_, &reg_e_)),
