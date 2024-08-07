@@ -397,7 +397,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_b_);
     break;
   case 0x06: // LD B, d8
-    LD(&reg_b_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_b_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x07:
     RLC(reg_a_);
@@ -454,7 +454,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_d_);
     break;
   case 0x16:
-    LD(&reg_d_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_d_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x17:
     RL(reg_a_);
@@ -478,7 +478,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_e_);
     break;
   case 0x1E:
-    LD(&reg_e_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_e_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x1F:
     RR(reg_a_);
@@ -507,7 +507,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_h_);
     break;
   case 0x26:
-    LD(&reg_h_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_h_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x27:
     DAA();
@@ -534,7 +534,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_l_);
     break;
   case 0x2E:
-    LD(&reg_l_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_l_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x2F:
     CPL();
@@ -562,7 +562,7 @@ void CPU::Execute(Instruction instruction) {
     DEC_HL();
     break;
   case 0x36:
-    mmu_->WriteMemory(reg_hl_->GetRegister(), mmu_->ReadMemory(++reg_pc_));
+    mmu_->WriteMemory(reg_hl_->GetRegister(), mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x37:
     SCF();
@@ -589,7 +589,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_a_);
     break;
   case 0x3E:
-    LD(&reg_a_, mmu_->ReadMemory(++reg_pc_));
+    LD(&reg_a_, mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x3F:
     CCF();
