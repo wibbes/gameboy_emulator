@@ -58,7 +58,7 @@ void CPU::JP(uint8_t condition) {
   bool flag = condition & 0x10 ? GetFlag(flag_c_) : GetFlag(flag_z_);
   if (flag & condition) {
     JP();
-  } 
+  }
   /* else { // If its a zero flag */
   /*   ++reg_pc_; */
   /* } */
@@ -71,13 +71,16 @@ void CPU::JR() {
 }
 
 void CPU::RET() {
-  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)) - 1;
+  reg_pc_ =
+      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)) - 1;
   reg_sp_ += 2;
 }
 
 void CPU::CALL() {
   PUSH(reg_pc_ + 3);
-  reg_pc_ = MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) - 3;
+  reg_pc_ =
+      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) -
+      3;
 }
 
 void CPU::BIT(uint8_t reg, uint8_t bit) {
@@ -137,14 +140,14 @@ void CPU::OR(uint8_t &reg) {
   reg_a_ |= reg;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_h_);
-  SetFlag(flag_n_);
+  ClearFlag(flag_n_);
   ClearFlag(flag_c_);
 }
 void CPU::XOR(uint8_t &reg) {
   reg_a_ ^= reg;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_h_);
-  SetFlag(flag_n_);
+  ClearFlag(flag_n_);
   ClearFlag(flag_c_);
 }
 void CPU::CP(uint8_t &reg) {
@@ -366,8 +369,7 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
-  std::cout << std::hex << std::uppercase
-            << instruction.mnemonic_
+  std::cout << std::hex << std::uppercase << instruction.mnemonic_
             << " Opcode: " << +instruction.opcode_ << " "
             << +mmu_->memory_[reg_pc_ + 1] << " " << +mmu_->memory_[reg_pc_ + 2]
             << " PC: " << +reg_pc_ << " Length: " << +instruction.length_
