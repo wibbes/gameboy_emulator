@@ -132,8 +132,8 @@ void CPU::DEC_HL() {
 void CPU::AND(uint8_t &reg) {
   reg_a_ &= reg;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_h_);
-  SetFlag(flag_n_);
+  ClearFlag(flag_n_);
+  SetFlag(flag_h_);
   ClearFlag(flag_c_);
 }
 void CPU::OR(uint8_t &reg) {
