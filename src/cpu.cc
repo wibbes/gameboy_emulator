@@ -369,11 +369,6 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) { Execute(instructions.at(opcode)); }
 
 void CPU::Execute(Instruction instruction) {
-  std::cout << std::hex << std::uppercase << instruction.mnemonic_
-            << " Opcode: " << +instruction.opcode_ << " "
-            << +mmu_->memory_[reg_pc_ + 1] << " " << +mmu_->memory_[reg_pc_ + 2]
-            << " PC: " << +reg_pc_ << " Length: " << +instruction.length_
-            << '\n';
   switch (instruction.opcode_) {
   case 0x00:
     NOP();
@@ -1151,10 +1146,12 @@ void CPU::Execute(Instruction instruction) {
   case 0xE9:
     JP_HL();
     break;
-  case 0xEA:
-    mmu_->WriteMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2), reg_pc_ + 1),
-                      reg_a_);
+  case 0xEA: {
+    uint16_t word =
+        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+      mmu_->WriteMemory(word, reg_a_);
     break;
+  }
   case 0xEB:
     break;
   case 0xEC:

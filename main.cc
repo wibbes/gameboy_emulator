@@ -15,8 +15,7 @@ int main(int argc, char *argv[]) {
         cpu.reg_a_, cpu.reg_f_, cpu.reg_b_, cpu.reg_c_, cpu.reg_d_, cpu.reg_e_,
         cpu.reg_h_, cpu.reg_l_, cpu.reg_sp_, cpu.reg_pc_,
         cpu.mmu_->memory_[cpu.reg_pc_], cpu.mmu_->memory_[cpu.reg_pc_ + 1],
-        cpu.mmu_->memory_[cpu.reg_pc_ + 2], cpu.mmu_->memory_[cpu.reg_pc_ + 3]
-    );
+        cpu.mmu_->memory_[cpu.reg_pc_ + 2], cpu.mmu_->memory_[cpu.reg_pc_ + 3]);
     cpu.Run();
   }
   std::fclose(log);
