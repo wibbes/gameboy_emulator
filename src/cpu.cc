@@ -252,8 +252,7 @@ void CPU::SWAP(uint8_t &reg) {
 }
 
 void CPU::ADD(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_);
-  int8_t eval = reg_a_ + reg;
+  int eval = reg_a_ + reg;
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
@@ -295,7 +294,7 @@ void CPU::ADC(uint8_t &reg) {
 }
 
 void CPU::SUB(uint8_t &reg) {
-  int8_t eval = reg_a_ - reg;
+  int eval = reg_a_ - reg;
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
