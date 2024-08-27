@@ -53,6 +53,7 @@ public:
   void Fetch();
   void Decode(uint8_t opcode);
   void Execute(Instruction instruction);
+  void ExecuteExtended(Instruction instruction);
 
   void LD(Register16 reg, uint16_t value);
   void LD(uint8_t *reg, uint8_t value);

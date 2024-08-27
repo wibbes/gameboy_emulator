@@ -1031,7 +1031,8 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0xCB:
-    // Extended instruciton prefix
+    ++reg_pc_;
+    ExecuteExtended(instructions.at(mmu_->ReadMemory(reg_pc_)));
     break;
   case 0xCC:
     if (GetFlag(flag_z_)) {
@@ -1148,7 +1149,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xEA: {
     uint16_t word =
         MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
-      mmu_->WriteMemory(word, reg_a_);
+    mmu_->WriteMemory(word, reg_a_);
     break;
   }
   case 0xEB:
@@ -1234,3 +1235,778 @@ void CPU::Execute(Instruction instruction) {
   }
   reg_pc_ += instruction.length_;
 }
+
+void CPU::ExecuteExtended(Instruction instruction) {
+  switch (instruction.opcode_) {
+  case 0x00:
+    RLC();
+    break;
+  case 0x01:
+    RLC();
+    break;
+  case 0x02:
+    RLC();
+    break;
+  case 0x03:
+    RLC();
+    break;
+  case 0x04:
+    RLC();
+    break;
+  case 0x05:
+    RLC();
+    break;
+  case 0x06:
+    RLC();
+    break;
+  case 0x07:
+    RLC();
+    break;
+  case 0x08:
+    RRC();
+    break;
+  case 0x09:
+    RRC();
+    break;
+  case 0x0A:
+    RRC();
+    break;
+  case 0x0B:
+    RRC();
+    break;
+  case 0x0C:
+    RRC();
+    break;
+  case 0x0D:
+    RRC();
+    break;
+  case 0x0E:
+    RRC();
+    break;
+  case 0x0F:
+    RRC();
+    break;
+  case 0x10:
+    RL();
+    break;
+  case 0x11:
+    RL();
+    break;
+  case 0x12:
+    RL();
+    break;
+  case 0x13:
+    RL();
+    break;
+  case 0x14:
+    RL();
+    break;
+  case 0x15:
+    RL();
+    break;
+  case 0x16:
+    RL();
+    break;
+  case 0x17:
+    RL();
+    break;
+  case 0x18:
+    RR();
+    break;
+  case 0x19:
+    RR();
+    break;
+  case 0x1A:
+    RR();
+    break;
+  case 0x1B:
+    RR();
+    break;
+  case 0x1C:
+    RR();
+    break;
+  case 0x1D:
+    RR();
+    break;
+  case 0x1E:
+    RR();
+    break;
+  case 0x1F:
+    RR();
+    break;
+  case 0x20:
+    SLA();
+    break;
+  case 0x21:
+    SLA();
+    break;
+  case 0x22:
+    SLA();
+    break;
+  case 0x23:
+    SLA();
+    break;
+  case 0x24:
+    SLA();
+    break;
+  case 0x25:
+    SLA();
+    break;
+  case 0x26:
+    SLA();
+    break;
+  case 0x27:
+    SLA();
+    break;
+  case 0x28:
+    SRA();
+    break;
+  case 0x29:
+    SRA();
+    break;
+  case 0x2A:
+    SRA();
+    break;
+  case 0x2B:
+    SRA();
+    break;
+  case 0x2C:
+    SRA();
+    break;
+  case 0x2D:
+    SRA();
+    break;
+  case 0x2E:
+    SRA();
+    break;
+  case 0x2F:
+    SRA();
+    break;
+  case 0x30:
+    SWAP();
+    break;
+  case 0x31:
+    SWAP();
+    break;
+  case 0x32:
+    SWAP();
+    break;
+  case 0x33:
+    SWAP();
+    break;
+  case 0x34:
+    SWAP();
+    break;
+  case 0x35:
+    SWAP();
+    break;
+  case 0x36:
+    SWAP();
+    break;
+  case 0x37:
+    SWAP();
+    break;
+  case 0x38:
+    SRL();
+    break;
+  case 0x39:
+    SRL();
+    break;
+  case 0x3A:
+    SRL();
+    break;
+  case 0x3B:
+    SRL();
+    break;
+  case 0x3C:
+    SRL();
+    break;
+  case 0x3D:
+    SRL();
+    break;
+  case 0x3E:
+    SRL();
+    break;
+  case 0x3F:
+    SRL();
+    break;
+  case 0x40:
+    BIT();
+    break;
+  case 0x41:
+    BIT();
+    break;
+  case 0x42:
+    BIT();
+    break;
+  case 0x43:
+    BIT();
+    break;
+  case 0x44:
+    BIT();
+    break;
+  case 0x45:
+    BIT();
+    break;
+  case 0x46:
+    BIT();
+    break;
+  case 0x47:
+    BIT();
+    break;
+  case 0x48:
+    BIT();
+    break;
+  case 0x49:
+    BIT();
+    break;
+  case 0x4A:
+    BIT();
+    break;
+  case 0x4B:
+    BIT();
+    break;
+  case 0x4C:
+    BIT();
+    break;
+  case 0x4D:
+    BIT();
+    break;
+  case 0x4E:
+    BIT();
+    break;
+  case 0x4F:
+    BIT();
+    break;
+  case 0x50:
+    BIT();
+    break;
+  case 0x51:
+    BIT();
+    break;
+  case 0x52:
+    BIT();
+    break;
+  case 0x53:
+    BIT();
+    break;
+  case 0x54:
+    BIT();
+    break;
+  case 0x55:
+    BIT();
+    break;
+  case 0x56:
+    BIT();
+    break;
+  case 0x57:
+    BIT();
+    break;
+  case 0x58:
+    BIT();
+    break;
+  case 0x59:
+    BIT();
+    break;
+  case 0x5A:
+    BIT();
+    break;
+  case 0x5B:
+    BIT();
+    break;
+  case 0x5C:
+    BIT();
+    break;
+  case 0x5D:
+    BIT();
+    break;
+  case 0x5E:
+    BIT();
+    break;
+  case 0x5F:
+    BIT();
+    break;
+  case 0x60:
+    BIT();
+    break;
+  case 0x61:
+    BIT();
+    break;
+  case 0x62:
+    BIT();
+    break;
+  case 0x63:
+    BIT();
+    break;
+  case 0x64:
+    BIT();
+    break;
+  case 0x65:
+    BIT();
+    break;
+  case 0x66:
+    BIT();
+    break;
+  case 0x67:
+    BIT();
+    break;
+  case 0x68:
+    BIT();
+    break;
+  case 0x69:
+    BIT();
+    break;
+  case 0x6A:
+    BIT();
+    break;
+  case 0x6B:
+    BIT();
+    break;
+  case 0x6C:
+    BIT();
+    break;
+  case 0x6D:
+    BIT();
+    break;
+  case 0x6E:
+    BIT();
+    break;
+  case 0x6F:
+    BIT();
+    break;
+  case 0x70:
+    BIT();
+    break;
+  case 0x71:
+    BIT();
+    break;
+  case 0x72:
+    BIT();
+    break;
+  case 0x73:
+    BIT();
+    break;
+  case 0x74:
+    BIT();
+    break;
+  case 0x75:
+    BIT();
+    break;
+  case 0x76:
+    BIT();
+    break;
+  case 0x77:
+    BIT();
+    break;
+  case 0x78:
+    BIT();
+    break;
+  case 0x79:
+    BIT();
+    break;
+  case 0x7A:
+    BIT();
+    break;
+  case 0x7B:
+    BIT();
+    break;
+  case 0x7C:
+    BIT();
+    break;
+  case 0x7D:
+    BIT();
+    break;
+  case 0x7E:
+    BIT();
+    break;
+  case 0x7F:
+    BIT();
+    break;
+  case 0x80:
+    RES();
+    break;
+  case 0x81:
+    RES();
+    break;
+  case 0x82:
+    RES();
+    break;
+  case 0x83:
+    RES();
+    break;
+  case 0x84:
+    RES();
+    break;
+  case 0x85:
+    RES();
+    break;
+  case 0x86:
+    RES();
+    break;
+  case 0x87:
+    RES();
+    break;
+  case 0x88:
+    RES();
+    break;
+  case 0x89:
+    RES();
+    break;
+  case 0x8A:
+    RES();
+    break;
+  case 0x8B:
+    RES();
+    break;
+  case 0x8C:
+    RES();
+    break;
+  case 0x8D:
+    RES();
+    break;
+  case 0x8E:
+    RES();
+    break;
+  case 0x8F:
+    RES();
+    break;
+  case 0x90:
+    RES();
+    break;
+  case 0x91:
+    RES();
+    break;
+  case 0x92:
+    RES();
+    break;
+  case 0x93:
+    RES();
+    break;
+  case 0x94:
+    RES();
+    break;
+  case 0x95:
+    RES();
+    break;
+  case 0x96:
+    RES();
+    break;
+  case 0x97:
+    RES();
+    break;
+  case 0x98:
+    RES();
+    break;
+  case 0x99:
+    RES();
+    break;
+  case 0x9A:
+    RES();
+    break;
+  case 0x9B:
+    RES();
+    break;
+  case 0x9C:
+    RES();
+    break;
+  case 0x9D:
+    RES();
+    break;
+  case 0x9E:
+    RES();
+    break;
+  case 0x9F:
+    RES();
+    break;
+  case 0xA0:
+    RES();
+    break;
+  case 0xA1:
+    RES();
+    break;
+  case 0xA2:
+    RES();
+    break;
+  case 0xA3:
+    RES();
+    break;
+  case 0xA4:
+    RES();
+    break;
+  case 0xA5:
+    RES();
+    break;
+  case 0xA6:
+    RES();
+    break;
+  case 0xA7:
+    RES();
+    break;
+  case 0xA8:
+    RES();
+    break;
+  case 0xA9:
+    RES();
+    break;
+  case 0xAA:
+    RES();
+    break;
+  case 0xAB:
+    RES();
+    break;
+  case 0xAC:
+    RES();
+    break;
+  case 0xAD:
+    RES();
+    break;
+  case 0xAD:
+    RES();
+    break;
+  case 0xAE:
+    RES();
+    break;
+  case 0xAF:
+    RES();
+    break;
+  case 0xB0:
+    RES();
+    break;
+  case 0xB1:
+    RES();
+    break;
+  case 0xA2:
+    RES();
+    break;
+  case 0xB3:
+    RES();
+    break;
+  case 0xB4:
+    RES();
+    break;
+  case 0xB5:
+    RES();
+    break;
+  case 0xB6:
+    RES();
+    break;
+  case 0xB7:
+    RES();
+    break;
+  case 0xB8:
+    RES();
+    break;
+  case 0xB9:
+    RES();
+    break;
+  case 0xBA:
+    RES();
+    break;
+  case 0xBB:
+    RES();
+    break;
+  case 0xBC:
+    RES();
+    break;
+  case 0xBD:
+    RES();
+    break;
+  case 0xBE:
+    RES();
+    break;
+  case 0xBF:
+    RES();
+    break;
+  case 0xC0:
+    SET();
+    break;
+  case 0xC1:
+    SET();
+    break;
+  case 0xC2:
+    SET();
+    break;
+  case 0xC3:
+    SET();
+    break;
+  case 0xC4:
+    SET();
+    break;
+  case 0xC5:
+    SET();
+    break;
+  case 0xC6:
+    SET();
+    break;
+  case 0xC7:
+    SET();
+    break;
+  case 0xC8:
+    SET();
+    break;
+  case 0xC9:
+    SET();
+    break;
+  case 0xCA:
+    SET();
+    break;
+  case 0xCB:
+    SET();
+    break;
+  case 0xCC:
+    SET();
+    break;
+  case 0xCD:
+    SET();
+    break;
+  case 0xCE:
+    SET();
+    break;
+  case 0xCF:
+    SET();
+    break;
+  case 0xD0:
+    SET();
+    break;
+  case 0xD1:
+    SET();
+    break;
+  case 0xD2:
+    SET();
+    break;
+  case 0xD3:
+    SET();
+    break;
+  case 0xD4:
+    SET();
+    break;
+  case 0xD5:
+    SET();
+    break;
+  case 0xD6:
+    SET();
+    break;
+  case 0xD7:
+    SET();
+    break;
+  case 0xD8:
+    SET();
+    break;
+  case 0xD9:
+    SET();
+    break;
+  case 0xDA:
+    SET();
+    break;
+  case 0xDB:
+    SET();
+    break;
+  case 0xDC:
+    SET();
+    break;
+  case 0xDD:
+    SET();
+    break;
+  case 0xDE:
+    SET();
+    break;
+  case 0xDF:
+    SET();
+    break;
+  case 0xE0:
+    SET();
+    break;
+  case 0xE1:
+    SET();
+    break;
+  case 0xE2:
+    SET();
+    break;
+  case 0xE3:
+    SET();
+    break;
+  case 0xE4:
+    SET();
+    break;
+  case 0xE5:
+    SET();
+    break;
+  case 0xE6:
+    SET();
+    break;
+  case 0xE7:
+    SET();
+    break;
+  case 0xE8:
+    SET();
+    break;
+  case 0xE9:
+    SET();
+    break;
+  case 0xEA:
+    SET();
+    break;
+  case 0xEB:
+    SET();
+    break;
+  case 0xEC:
+    SET();
+    break;
+  case 0xED:
+    SET();
+    break;
+  case 0xEE:
+    SET();
+    break;
+  case 0xEF:
+    SET();
+    break;
+  case 0xF0:
+    SET();
+    break;
+  case 0xF1:
+    SET();
+    break;
+  case 0xF2:
+    SET();
+    break;
+  case 0xF3:
+    SET();
+    break;
+  case 0xF4:
+    SET();
+    break;
+  case 0xF5:
+    SET();
+    break;
+  case 0xF6:
+    SET();
+    break;
+  case 0xF7:
+    SET();
+    break;
+  case 0xF8:
+    SET();
+    break;
+  case 0xF9:
+    SET();
+    break;
+  case 0xFA:
+    SET();
+    break;
+  case 0xFB:
+    SET();
+    break;
+  case 0xFC:
+    SET();
+    break;
+  case 0xFD:
+    SET();
+    break;
+  case 0xFE:
+    SET();
+    break;
+  case 0xFF:
+    SET();
+    break;
+  }
