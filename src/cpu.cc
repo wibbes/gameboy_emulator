@@ -64,7 +64,9 @@ void CPU::JP(uint8_t condition) {
   /* } */
 }
 
-void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister(); }
+void CPU::JP_HL() {
+  reg_pc_ = reg_hl_->GetRegister() - 1;
+}
 
 void CPU::JR() {
   reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
