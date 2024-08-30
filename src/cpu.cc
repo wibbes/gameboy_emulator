@@ -266,9 +266,8 @@ void CPU::ADD(uint8_t &reg) {
 }
 
 void CPU::ADD_HL(uint16_t value) {
-  int16_t eval = reg_hl_->GetRegister() + value;
-  int test_carries =
-      static_cast<int16_t>(reg_hl_->GetRegister() ^ value ^ eval);
+  int eval = reg_hl_->GetRegister() + value;
+  int test_carries = reg_hl_->GetRegister() ^ value ^ eval;
   ClearFlag(flag_n_);
   ((test_carries & 0x1000) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
   ((test_carries & 0x10000) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
