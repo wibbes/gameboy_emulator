@@ -70,6 +70,8 @@ public:
   void CALL();
 
   void BIT(uint8_t reg, uint8_t bit);
+  void RES(uint8_t reg, uint8_t bit);
+  void SET(uint8_t reg, uint8_t bit);
 
   void INC(Register16 reg);
   void INC(uint8_t &reg);

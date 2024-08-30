@@ -89,6 +89,10 @@ void CPU::BIT(uint8_t reg, uint8_t bit) {
   SetFlag(flag_c_);
 }
 
+void CPU::SET(uint8_t reg, uint8_t bit) { reg |= 1UL << bit; }
+
+void CPU::RES(uint8_t reg, uint8_t bit) { reg &= ~(1UL << bit); }
+
 void CPU::INC(Register16 reg) {
   reg.SetRegister(reg.GetRegister() + 1);
   // instruction does not change registers
@@ -1239,774 +1243,836 @@ void CPU::Execute(Instruction instruction) {
 void CPU::ExecuteExtended(Instruction instruction) {
   switch (instruction.opcode_) {
   case 0x00:
-    RLC();
+    RLC(reg_b_);
     break;
   case 0x01:
-    RLC();
+    RLC(reg_c_);
     break;
   case 0x02:
-    RLC();
+    RLC(reg_d_);
     break;
   case 0x03:
-    RLC();
+    RLC(reg_e_);
     break;
   case 0x04:
-    RLC();
+    RLC(reg_h_);
     break;
   case 0x05:
-    RLC();
-    break;
-  case 0x06:
-    RLC();
-    break;
-  case 0x07:
-    RLC();
-    break;
-  case 0x08:
-    RRC();
-    break;
-  case 0x09:
-    RRC();
-    break;
-  case 0x0A:
-    RRC();
-    break;
-  case 0x0B:
-    RRC();
-    break;
-  case 0x0C:
-    RRC();
-    break;
-  case 0x0D:
-    RRC();
-    break;
-  case 0x0E:
-    RRC();
-    break;
-  case 0x0F:
-    RRC();
-    break;
-  case 0x10:
-    RL();
-    break;
-  case 0x11:
-    RL();
-    break;
-  case 0x12:
-    RL();
-    break;
-  case 0x13:
-    RL();
-    break;
-  case 0x14:
-    RL();
-    break;
-  case 0x15:
-    RL();
-    break;
-  case 0x16:
-    RL();
-    break;
-  case 0x17:
-    RL();
-    break;
-  case 0x18:
-    RR();
-    break;
-  case 0x19:
-    RR();
-    break;
-  case 0x1A:
-    RR();
-    break;
-  case 0x1B:
-    RR();
-    break;
-  case 0x1C:
-    RR();
-    break;
-  case 0x1D:
-    RR();
-    break;
-  case 0x1E:
-    RR();
-    break;
-  case 0x1F:
-    RR();
-    break;
-  case 0x20:
-    SLA();
-    break;
-  case 0x21:
-    SLA();
-    break;
-  case 0x22:
-    SLA();
-    break;
-  case 0x23:
-    SLA();
-    break;
-  case 0x24:
-    SLA();
-    break;
-  case 0x25:
-    SLA();
-    break;
-  case 0x26:
-    SLA();
-    break;
-  case 0x27:
-    SLA();
-    break;
-  case 0x28:
-    SRA();
-    break;
-  case 0x29:
-    SRA();
-    break;
-  case 0x2A:
-    SRA();
-    break;
-  case 0x2B:
-    SRA();
-    break;
-  case 0x2C:
-    SRA();
-    break;
-  case 0x2D:
-    SRA();
-    break;
-  case 0x2E:
-    SRA();
-    break;
-  case 0x2F:
-    SRA();
-    break;
-  case 0x30:
-    SWAP();
-    break;
-  case 0x31:
-    SWAP();
-    break;
-  case 0x32:
-    SWAP();
-    break;
-  case 0x33:
-    SWAP();
-    break;
-  case 0x34:
-    SWAP();
-    break;
-  case 0x35:
-    SWAP();
-    break;
-  case 0x36:
-    SWAP();
-    break;
-  case 0x37:
-    SWAP();
-    break;
-  case 0x38:
-    SRL();
-    break;
-  case 0x39:
-    SRL();
-    break;
-  case 0x3A:
-    SRL();
-    break;
-  case 0x3B:
-    SRL();
-    break;
-  case 0x3C:
-    SRL();
-    break;
-  case 0x3D:
-    SRL();
-    break;
-  case 0x3E:
-    SRL();
-    break;
-  case 0x3F:
-    SRL();
-    break;
-  case 0x40:
-    BIT();
-    break;
-  case 0x41:
-    BIT();
-    break;
-  case 0x42:
-    BIT();
-    break;
-  case 0x43:
-    BIT();
-    break;
-  case 0x44:
-    BIT();
-    break;
-  case 0x45:
-    BIT();
-    break;
-  case 0x46:
-    BIT();
-    break;
-  case 0x47:
-    BIT();
-    break;
-  case 0x48:
-    BIT();
-    break;
-  case 0x49:
-    BIT();
-    break;
-  case 0x4A:
-    BIT();
-    break;
-  case 0x4B:
-    BIT();
-    break;
-  case 0x4C:
-    BIT();
-    break;
-  case 0x4D:
-    BIT();
-    break;
-  case 0x4E:
-    BIT();
-    break;
-  case 0x4F:
-    BIT();
-    break;
-  case 0x50:
-    BIT();
-    break;
-  case 0x51:
-    BIT();
-    break;
-  case 0x52:
-    BIT();
-    break;
-  case 0x53:
-    BIT();
-    break;
-  case 0x54:
-    BIT();
-    break;
-  case 0x55:
-    BIT();
-    break;
-  case 0x56:
-    BIT();
-    break;
-  case 0x57:
-    BIT();
-    break;
-  case 0x58:
-    BIT();
-    break;
-  case 0x59:
-    BIT();
-    break;
-  case 0x5A:
-    BIT();
-    break;
-  case 0x5B:
-    BIT();
-    break;
-  case 0x5C:
-    BIT();
-    break;
-  case 0x5D:
-    BIT();
-    break;
-  case 0x5E:
-    BIT();
-    break;
-  case 0x5F:
-    BIT();
-    break;
-  case 0x60:
-    BIT();
-    break;
-  case 0x61:
-    BIT();
-    break;
-  case 0x62:
-    BIT();
-    break;
-  case 0x63:
-    BIT();
-    break;
-  case 0x64:
-    BIT();
-    break;
-  case 0x65:
-    BIT();
-    break;
-  case 0x66:
-    BIT();
-    break;
-  case 0x67:
-    BIT();
-    break;
-  case 0x68:
-    BIT();
-    break;
-  case 0x69:
-    BIT();
-    break;
-  case 0x6A:
-    BIT();
-    break;
-  case 0x6B:
-    BIT();
-    break;
-  case 0x6C:
-    BIT();
-    break;
-  case 0x6D:
-    BIT();
-    break;
-  case 0x6E:
-    BIT();
-    break;
-  case 0x6F:
-    BIT();
-    break;
-  case 0x70:
-    BIT();
-    break;
-  case 0x71:
-    BIT();
-    break;
-  case 0x72:
-    BIT();
-    break;
-  case 0x73:
-    BIT();
-    break;
-  case 0x74:
-    BIT();
-    break;
-  case 0x75:
-    BIT();
-    break;
-  case 0x76:
-    BIT();
-    break;
-  case 0x77:
-    BIT();
-    break;
-  case 0x78:
-    BIT();
-    break;
-  case 0x79:
-    BIT();
-    break;
-  case 0x7A:
-    BIT();
-    break;
-  case 0x7B:
-    BIT();
-    break;
-  case 0x7C:
-    BIT();
-    break;
-  case 0x7D:
-    BIT();
-    break;
-  case 0x7E:
-    BIT();
-    break;
-  case 0x7F:
-    BIT();
-    break;
-  case 0x80:
-    RES();
-    break;
-  case 0x81:
-    RES();
-    break;
-  case 0x82:
-    RES();
-    break;
-  case 0x83:
-    RES();
-    break;
-  case 0x84:
-    RES();
-    break;
-  case 0x85:
-    RES();
-    break;
-  case 0x86:
-    RES();
-    break;
-  case 0x87:
-    RES();
-    break;
-  case 0x88:
-    RES();
-    break;
-  case 0x89:
-    RES();
-    break;
-  case 0x8A:
-    RES();
-    break;
-  case 0x8B:
-    RES();
-    break;
-  case 0x8C:
-    RES();
-    break;
-  case 0x8D:
-    RES();
-    break;
-  case 0x8E:
-    RES();
-    break;
-  case 0x8F:
-    RES();
-    break;
-  case 0x90:
-    RES();
-    break;
-  case 0x91:
-    RES();
-    break;
-  case 0x92:
-    RES();
-    break;
-  case 0x93:
-    RES();
-    break;
-  case 0x94:
-    RES();
-    break;
-  case 0x95:
-    RES();
-    break;
-  case 0x96:
-    RES();
-    break;
-  case 0x97:
-    RES();
-    break;
-  case 0x98:
-    RES();
-    break;
-  case 0x99:
-    RES();
-    break;
-  case 0x9A:
-    RES();
-    break;
-  case 0x9B:
-    RES();
-    break;
-  case 0x9C:
-    RES();
-    break;
-  case 0x9D:
-    RES();
-    break;
-  case 0x9E:
-    RES();
-    break;
-  case 0x9F:
-    RES();
-    break;
-  case 0xA0:
-    RES();
-    break;
-  case 0xA1:
-    RES();
-    break;
-  case 0xA2:
-    RES();
-    break;
-  case 0xA3:
-    RES();
-    break;
-  case 0xA4:
-    RES();
-    break;
-  case 0xA5:
-    RES();
-    break;
-  case 0xA6:
-    RES();
-    break;
-  case 0xA7:
-    RES();
-    break;
-  case 0xA8:
-    RES();
-    break;
-  case 0xA9:
-    RES();
-    break;
-  case 0xAA:
-    RES();
-    break;
-  case 0xAB:
-    RES();
-    break;
-  case 0xAC:
-    RES();
-    break;
-  case 0xAD:
-    RES();
-    break;
-  case 0xAD:
-    RES();
-    break;
-  case 0xAE:
-    RES();
-    break;
-  case 0xAF:
-    RES();
-    break;
-  case 0xB0:
-    RES();
-    break;
-  case 0xB1:
-    RES();
-    break;
-  case 0xA2:
-    RES();
-    break;
-  case 0xB3:
-    RES();
-    break;
-  case 0xB4:
-    RES();
-    break;
-  case 0xB5:
-    RES();
-    break;
-  case 0xB6:
-    RES();
-    break;
-  case 0xB7:
-    RES();
-    break;
-  case 0xB8:
-    RES();
-    break;
-  case 0xB9:
-    RES();
-    break;
-  case 0xBA:
-    RES();
-    break;
-  case 0xBB:
-    RES();
-    break;
-  case 0xBC:
-    RES();
-    break;
-  case 0xBD:
-    RES();
-    break;
-  case 0xBE:
-    RES();
-    break;
-  case 0xBF:
-    RES();
-    break;
-  case 0xC0:
-    SET();
-    break;
-  case 0xC1:
-    SET();
-    break;
-  case 0xC2:
-    SET();
-    break;
-  case 0xC3:
-    SET();
-    break;
-  case 0xC4:
-    SET();
-    break;
-  case 0xC5:
-    SET();
-    break;
-  case 0xC6:
-    SET();
-    break;
-  case 0xC7:
-    SET();
-    break;
-  case 0xC8:
-    SET();
-    break;
-  case 0xC9:
-    SET();
-    break;
-  case 0xCA:
-    SET();
-    break;
-  case 0xCB:
-    SET();
-    break;
-  case 0xCC:
-    SET();
-    break;
-  case 0xCD:
-    SET();
-    break;
-  case 0xCE:
-    SET();
-    break;
-  case 0xCF:
-    SET();
-    break;
-  case 0xD0:
-    SET();
-    break;
-  case 0xD1:
-    SET();
-    break;
-  case 0xD2:
-    SET();
-    break;
-  case 0xD3:
-    SET();
-    break;
-  case 0xD4:
-    SET();
-    break;
-  case 0xD5:
-    SET();
-    break;
-  case 0xD6:
-    SET();
-    break;
-  case 0xD7:
-    SET();
-    break;
-  case 0xD8:
-    SET();
-    break;
-  case 0xD9:
-    SET();
-    break;
-  case 0xDA:
-    SET();
-    break;
-  case 0xDB:
-    SET();
-    break;
-  case 0xDC:
-    SET();
-    break;
-  case 0xDD:
-    SET();
-    break;
-  case 0xDE:
-    SET();
-    break;
-  case 0xDF:
-    SET();
-    break;
-  case 0xE0:
-    SET();
-    break;
-  case 0xE1:
-    SET();
-    break;
-  case 0xE2:
-    SET();
-    break;
-  case 0xE3:
-    SET();
-    break;
-  case 0xE4:
-    SET();
-    break;
-  case 0xE5:
-    SET();
-    break;
-  case 0xE6:
-    SET();
-    break;
-  case 0xE7:
-    SET();
-    break;
-  case 0xE8:
-    SET();
-    break;
-  case 0xE9:
-    SET();
-    break;
-  case 0xEA:
-    SET();
-    break;
-  case 0xEB:
-    SET();
-    break;
-  case 0xEC:
-    SET();
-    break;
-  case 0xED:
-    SET();
-    break;
-  case 0xEE:
-    SET();
-    break;
-  case 0xEF:
-    SET();
-    break;
-  case 0xF0:
-    SET();
-    break;
-  case 0xF1:
-    SET();
-    break;
-  case 0xF2:
-    SET();
-    break;
-  case 0xF3:
-    SET();
-    break;
-  case 0xF4:
-    SET();
-    break;
-  case 0xF5:
-    SET();
-    break;
-  case 0xF6:
-    SET();
-    break;
-  case 0xF7:
-    SET();
-    break;
-  case 0xF8:
-    SET();
-    break;
-  case 0xF9:
-    SET();
-    break;
-  case 0xFA:
-    SET();
-    break;
-  case 0xFB:
-    SET();
-    break;
-  case 0xFC:
-    SET();
-    break;
-  case 0xFD:
-    SET();
-    break;
-  case 0xFE:
-    SET();
-    break;
-  case 0xFF:
-    SET();
+    RLC(reg_l_);
+    break;
+  case 0x06: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RLC(byte);
     break;
   }
+  case 0x07:
+    RLC(reg_a_);
+    break;
+  case 0x08:
+    RRC(reg_b_);
+    break;
+  case 0x09:
+    RRC(reg_c_);
+    break;
+  case 0x0A:
+    RRC(reg_d_);
+    break;
+  case 0x0B:
+    RRC(reg_e_);
+    break;
+  case 0x0C:
+    RRC(reg_h_);
+    break;
+  case 0x0D:
+    RRC(reg_l_);
+    break;
+  case 0x0E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RRC(byte);
+    break;
+  }
+  case 0x0F:
+    RRC(reg_a_);
+    break;
+  case 0x10:
+    RL(reg_b_);
+    break;
+  case 0x11:
+    RL(reg_c_);
+    break;
+  case 0x12:
+    RL(reg_d_);
+    break;
+  case 0x13:
+    RL(reg_e_);
+    break;
+  case 0x14:
+    RL(reg_h_);
+    break;
+  case 0x15:
+    RL(reg_l_);
+    break;
+  case 0x16: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RL(byte);
+    break;
+  }
+  case 0x17:
+    RL(reg_a_);
+    break;
+  case 0x18:
+    RR(reg_b_);
+    break;
+  case 0x19:
+    RR(reg_c_);
+    break;
+  case 0x1A:
+    RR(reg_d_);
+    break;
+  case 0x1B:
+    RR(reg_e_);
+    break;
+  case 0x1C:
+    RR(reg_h_);
+    break;
+  case 0x1D:
+    RR(reg_l_);
+    break;
+  case 0x1E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RR(byte);
+    break;
+  }
+  case 0x1F:
+    RR(reg_a_);
+    break;
+  case 0x20:
+    SLA(reg_b_);
+    break;
+  case 0x21:
+    SLA(reg_c_);
+    break;
+  case 0x22:
+    SLA(reg_d_);
+    break;
+  case 0x23:
+    SLA(reg_e_);
+    break;
+  case 0x24:
+    SLA(reg_h_);
+    break;
+  case 0x25:
+    SLA(reg_l_);
+    break;
+  case 0x26: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SLA(byte);
+    break;
+  }
+  case 0x27:
+    SLA(reg_a_);
+    break;
+  case 0x28:
+    SRA(reg_b_);
+    break;
+  case 0x29:
+    SRA(reg_c_);
+    break;
+  case 0x2A:
+    SRA(reg_d_);
+    break;
+  case 0x2B:
+    SRA(reg_e_);
+    break;
+  case 0x2C:
+    SRA(reg_h_);
+    break;
+  case 0x2D:
+    SRA(reg_l_);
+    break;
+  case 0x2E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SRA(byte);
+    break;
+  }
+  case 0x2F:
+    SRA(reg_a_);
+    break;
+  case 0x30:
+    SWAP(reg_b_);
+    break;
+  case 0x31:
+    SWAP(reg_c_);
+    break;
+  case 0x32:
+    SWAP(reg_d_);
+    break;
+  case 0x33:
+    SWAP(reg_e_);
+    break;
+  case 0x34:
+    SWAP(reg_h_);
+    break;
+  case 0x35:
+    SWAP(reg_l_);
+    break;
+  case 0x36: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SWAP(byte);
+    break;
+  }
+  case 0x37:
+    SWAP(reg_a_);
+    break;
+  case 0x38:
+    SRL(reg_b_);
+    break;
+  case 0x39:
+    SRL(reg_c_);
+    break;
+  case 0x3A:
+    SRL(reg_d_);
+    break;
+  case 0x3B:
+    SRL(reg_e_);
+    break;
+  case 0x3C:
+    SRL(reg_h_);
+    break;
+  case 0x3D:
+    SRL(reg_l_);
+    break;
+  case 0x3E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SRL(byte);
+    break;
+  }
+  case 0x3F:
+    SRL(reg_a_);
+    break;
+  case 0x40:
+    BIT(reg_b_, 0);
+    break;
+  case 0x41:
+    BIT(reg_c_, 0);
+    break;
+  case 0x42:
+    BIT(reg_d_, 0);
+    break;
+  case 0x43:
+    BIT(reg_e_, 0);
+    break;
+  case 0x44:
+    BIT(reg_h_, 0);
+    break;
+  case 0x45:
+    BIT(reg_l_, 0);
+    break;
+  case 0x46: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 0);
+    break;
+  }
+  case 0x47:
+    BIT(reg_a_, 0);
+    break;
+  case 0x48:
+    BIT(reg_b_, 1);
+    break;
+  case 0x49:
+    BIT(reg_c_, 1);
+    break;
+  case 0x4A:
+    BIT(reg_d_, 1);
+    break;
+  case 0x4B:
+    BIT(reg_e_, 1);
+    break;
+  case 0x4C:
+    BIT(reg_h_, 1);
+    break;
+  case 0x4D:
+    BIT(reg_l_, 1);
+    break;
+  case 0x4E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 1);
+    break;
+  }
+  case 0x4F:
+    BIT(reg_a_, 1);
+    break;
+  case 0x50:
+    BIT(reg_b_, 2);
+    break;
+  case 0x51:
+    BIT(reg_c_, 2);
+    break;
+  case 0x52:
+    BIT(reg_d_, 2);
+    break;
+  case 0x53:
+    BIT(reg_e_, 2);
+    break;
+  case 0x54:
+    BIT(reg_h_, 2);
+    break;
+  case 0x55:
+    BIT(reg_l_, 2);
+    break;
+  case 0x56: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 2);
+    break;
+  }
+  case 0x57:
+    BIT(reg_a_, 2);
+    break;
+  case 0x58:
+    BIT(reg_b_, 3);
+    break;
+  case 0x59:
+    BIT(reg_c_, 3);
+    break;
+  case 0x5A:
+    BIT(reg_d_, 3);
+    break;
+  case 0x5B:
+    BIT(reg_e_, 3);
+    break;
+  case 0x5C:
+    BIT(reg_h_, 3);
+    break;
+  case 0x5D:
+    BIT(reg_l_, 3);
+    break;
+  case 0x5E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 3);
+    break;
+  }
+  case 0x5F:
+    BIT(reg_a_, 3);
+    break;
+  case 0x60:
+    BIT(reg_b_, 4);
+    break;
+  case 0x61:
+    BIT(reg_c_, 4);
+    break;
+  case 0x62:
+    BIT(reg_d_, 4);
+    break;
+  case 0x63:
+    BIT(reg_e_, 4);
+    break;
+  case 0x64:
+    BIT(reg_h_, 4);
+    break;
+  case 0x65:
+    BIT(reg_l_, 4);
+    break;
+  case 0x66: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 4);
+    break;
+  }
+  case 0x67:
+    BIT(reg_a_, 4);
+    break;
+  case 0x68:
+    BIT(reg_b_, 5);
+    break;
+  case 0x69:
+    BIT(reg_c_, 5);
+    break;
+  case 0x6A:
+    BIT(reg_d_, 5);
+    break;
+  case 0x6B:
+    BIT(reg_e_, 5);
+    break;
+  case 0x6C:
+    BIT(reg_h_, 5);
+    break;
+  case 0x6D:
+    BIT(reg_l_, 5);
+    break;
+  case 0x6E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 5);
+    break;
+  }
+  case 0x6F:
+    BIT(reg_a_, 5);
+    break;
+  case 0x70:
+    BIT(reg_b_, 6);
+    break;
+  case 0x71:
+    BIT(reg_c_, 6);
+    break;
+  case 0x72:
+    BIT(reg_d_, 6);
+    break;
+  case 0x73:
+    BIT(reg_e_, 6);
+    break;
+  case 0x74:
+    BIT(reg_h_, 6);
+    break;
+  case 0x75:
+    BIT(reg_l_, 6);
+    break;
+  case 0x76: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 6);
+    break;
+  }
+  case 0x77:
+    BIT(reg_a_, 6);
+    break;
+  case 0x78:
+    BIT(reg_b_, 7);
+    break;
+  case 0x79:
+    BIT(reg_c_, 7);
+    break;
+  case 0x7A:
+    BIT(reg_d_, 7);
+    break;
+  case 0x7B:
+    BIT(reg_e_, 7);
+    break;
+  case 0x7C:
+    BIT(reg_h_, 7);
+    break;
+  case 0x7D:
+    BIT(reg_l_, 7);
+    break;
+  case 0x7E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    BIT(byte, 7);
+    break;
+  }
+  case 0x7F:
+    BIT(reg_a_, 7);
+    break;
+  case 0x80:
+    RES(reg_b_, 0);
+    break;
+  case 0x81:
+    RES(reg_c_, 0);
+    break;
+  case 0x82:
+    RES(reg_d_, 0);
+    break;
+  case 0x83:
+    RES(reg_e_, 0);
+    break;
+  case 0x84:
+    RES(reg_h_, 0);
+    break;
+  case 0x85:
+    RES(reg_l_, 0);
+    break;
+  case 0x86: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 0);
+    break;
+  }
+  case 0x87:
+    RES(reg_a_, 0);
+    break;
+  case 0x88:
+    RES(reg_b_, 1);
+    break;
+  case 0x89:
+    RES(reg_c_, 1);
+    break;
+  case 0x8A:
+    RES(reg_d_, 1);
+    break;
+  case 0x8B:
+    RES(reg_e_, 1);
+    break;
+  case 0x8C:
+    RES(reg_h_, 1);
+    break;
+  case 0x8D:
+    RES(reg_l_, 1);
+    break;
+  case 0x8E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 1);
+    break;
+  }
+  case 0x8F:
+    RES(reg_a_, 1);
+    break;
+  case 0x90:
+    RES(reg_b_, 2);
+    break;
+  case 0x91:
+    RES(reg_c_, 2);
+    break;
+  case 0x92:
+    RES(reg_d_, 2);
+    break;
+  case 0x93:
+    RES(reg_e_, 2);
+    break;
+  case 0x94:
+    RES(reg_h_, 2);
+    break;
+  case 0x95:
+    RES(reg_l_, 2);
+    break;
+  case 0x96: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 2);
+    break;
+  }
+  case 0x97:
+    RES(reg_a_, 2);
+    break;
+  case 0x98:
+    RES(reg_b_, 3);
+    break;
+  case 0x99:
+    RES(reg_c_, 3);
+    break;
+  case 0x9A:
+    RES(reg_d_, 3);
+    break;
+  case 0x9B:
+    RES(reg_e_, 3);
+    break;
+  case 0x9C:
+    RES(reg_h_, 3);
+    break;
+  case 0x9D:
+    RES(reg_l_, 3);
+    break;
+  case 0x9E: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 3);
+    break;
+  }
+  case 0x9F:
+    RES(reg_a_, 3);
+    break;
+  case 0xA0:
+    RES(reg_b_, 4);
+    break;
+  case 0xA1:
+    RES(reg_c_, 4);
+    break;
+  case 0xA2:
+    RES(reg_d_, 4);
+    break;
+  case 0xA3:
+    RES(reg_e_, 4);
+    break;
+  case 0xA4:
+    RES(reg_h_, 4);
+    break;
+  case 0xA5:
+    RES(reg_l_, 4);
+    break;
+  case 0xA6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 4);
+    break;
+  }
+  case 0xA7:
+    RES(reg_a_, 4);
+    break;
+  case 0xA8:
+    RES(reg_b_, 5);
+    break;
+  case 0xA9:
+    RES(reg_c_, 5);
+    break;
+  case 0xAA:
+    RES(reg_d_, 5);
+    break;
+  case 0xAB:
+    RES(reg_e_, 5);
+    break;
+  case 0xAC:
+    RES(reg_h_, 5);
+    break;
+  case 0xAD:
+    RES(reg_l_, 5);
+    break;
+  case 0xAE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 5);
+    break;
+  }
+  case 0xAF:
+    RES(reg_a_, 5);
+    break;
+  case 0xB0:
+    RES(reg_b_, 6);
+    break;
+  case 0xB1:
+    RES(reg_c_, 6);
+    break;
+  case 0xB2:
+    RES(reg_d_, 6);
+    break;
+  case 0xB3:
+    RES(reg_e_, 6);
+    break;
+  case 0xB4:
+    RES(reg_h_, 6);
+    break;
+  case 0xB5:
+    RES(reg_l_, 6);
+    break;
+  case 0xB6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 6);
+    break;
+  }
+  case 0xB7:
+    RES(reg_a_, 6);
+    break;
+  case 0xB8:
+    RES(reg_b_, 7);
+    break;
+  case 0xB9:
+    RES(reg_c_, 7);
+    break;
+  case 0xBA:
+    RES(reg_d_, 7);
+    break;
+  case 0xBB:
+    RES(reg_e_, 7);
+    break;
+  case 0xBC:
+    RES(reg_h_, 7);
+    break;
+  case 0xBD:
+    RES(reg_l_, 7);
+    break;
+  case 0xBE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    RES(byte, 7);
+    break;
+  }
+  case 0xBF:
+    RES(reg_a_, 7);
+    break;
+  case 0xC0:
+    SET(reg_b_, 0);
+    break;
+  case 0xC1:
+    SET(reg_c_, 0);
+    break;
+  case 0xC2:
+    SET(reg_d_, 0);
+    break;
+  case 0xC3:
+    SET(reg_e_, 0);
+    break;
+  case 0xC4:
+    SET(reg_h_, 0);
+    break;
+  case 0xC5:
+    SET(reg_l_, 0);
+    break;
+  case 0xC6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 0);
+    break;
+  }
+  case 0xC7:
+    SET(reg_a_, 0);
+    break;
+  case 0xC8:
+    SET(reg_b_, 1);
+    break;
+  case 0xC9:
+    SET(reg_c_, 1);
+    break;
+  case 0xCA:
+    SET(reg_d_, 1);
+    break;
+  case 0xCB:
+    SET(reg_e_, 1);
+    break;
+  case 0xCC:
+    SET(reg_h_, 1);
+    break;
+  case 0xCD:
+    SET(reg_l_, 1);
+    break;
+  case 0xCE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 1);
+    break;
+  }
+  case 0xCF:
+    SET(reg_a_, 1);
+    break;
+  case 0xD0:
+    SET(reg_b_, 2);
+    break;
+  case 0xD1:
+    SET(reg_c_, 2);
+    break;
+  case 0xD2:
+    SET(reg_d_, 2);
+    break;
+  case 0xD3:
+    SET(reg_e_, 2);
+    break;
+  case 0xD4:
+    SET(reg_h_, 2);
+    break;
+  case 0xD5:
+    SET(reg_l_, 2);
+    break;
+  case 0xD6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 2);
+    break;
+  }
+  case 0xD7:
+    SET(reg_a_, 2);
+    break;
+  case 0xD8:
+    SET(reg_b_, 3);
+    break;
+  case 0xD9:
+    SET(reg_c_, 3);
+    break;
+  case 0xDA:
+    SET(reg_d_, 3);
+    break;
+  case 0xDB:
+    SET(reg_e_, 3);
+    break;
+  case 0xDC:
+    SET(reg_h_, 3);
+    break;
+  case 0xDD:
+    SET(reg_l_, 3);
+    break;
+  case 0xDE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 3);
+    break;
+  }
+  case 0xDF:
+    SET(reg_a_, 3);
+    break;
+  case 0xE0:
+    SET(reg_b_, 4);
+    break;
+  case 0xE1:
+    SET(reg_c_, 4);
+    break;
+  case 0xE2:
+    SET(reg_d_, 4);
+    break;
+  case 0xE3:
+    SET(reg_e_, 4);
+    break;
+  case 0xE4:
+    SET(reg_h_, 4);
+    break;
+  case 0xE5:
+    SET(reg_l_, 4);
+    break;
+  case 0xE6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 4);
+    break;
+  }
+  case 0xE7:
+    SET(reg_a_, 4);
+    break;
+  case 0xE8:
+    SET(reg_b_, 5);
+    break;
+  case 0xE9:
+    SET(reg_c_, 5);
+    break;
+  case 0xEA:
+    SET(reg_d_, 5);
+    break;
+  case 0xEB:
+    SET(reg_e_, 5);
+    break;
+  case 0xEC:
+    SET(reg_h_, 5);
+    break;
+  case 0xED:
+    SET(reg_l_, 5);
+    break;
+  case 0xEE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 5);
+    break;
+  }
+  case 0xEF:
+    SET(reg_a_, 5);
+    break;
+  case 0xF0:
+    SET(reg_b_, 6);
+    break;
+  case 0xF1:
+    SET(reg_c_, 6);
+    break;
+  case 0xF2:
+    SET(reg_d_, 6);
+    break;
+  case 0xF3:
+    SET(reg_e_, 6);
+    break;
+  case 0xF4:
+    SET(reg_h_, 6);
+    break;
+  case 0xF5:
+    SET(reg_l_, 6);
+    break;
+  case 0xF6: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 6);
+    break;
+  }
+  case 0xF7:
+    SET(reg_a_, 6);
+    break;
+  case 0xF8:
+    SET(reg_b_, 7);
+    break;
+  case 0xF9:
+    SET(reg_c_, 7);
+    break;
+  case 0xFA:
+    SET(reg_d_, 7);
+    break;
+  case 0xFB:
+    SET(reg_e_, 7);
+    break;
+  case 0xFC:
+    SET(reg_h_, 7);
+    break;
+  case 0xFD:
+    SET(reg_l_, 7);
+    break;
+  case 0xFE: {
+    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    SET(byte, 7);
+    break;
+  }
+  case 0xFF:
+    SET(reg_a_, 7);
+    break;
+  }
+}
