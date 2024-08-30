@@ -126,11 +126,11 @@ void CPU::DEC(uint8_t &reg) {
 }
 
 void CPU::DEC_HL() {
-  uint8_t eval = mmu_->ReadMemory(reg_hl_->GetRegister() + 1);
-  eval == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  uint8_t new_value = mmu_->ReadMemory(reg_hl_->GetRegister()) - 1;
+  mmu_->WriteMemory(reg_hl_->GetRegister(), new_value);
+  new_value == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   SetFlag(flag_n_);
-  (eval & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  reg_hl_->SetRegister(eval);
+  (new_value & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
 }
 
 void CPU::AND(uint8_t &reg) {
