@@ -288,8 +288,8 @@ void CPU::ADD_SP() {
 
 void CPU::ADC(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
-  int8_t eval = reg_a_ + (reg + carry);
-  int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
+  int eval = reg_a_ + (reg + carry);
+  int test_carries = reg_a_ ^ reg ^ eval;
   reg_a_ = eval;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
