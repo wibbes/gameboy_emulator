@@ -1086,7 +1086,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xD7:
-    RST(rst_jump_vectors[3]);
+    RST(rst_jump_vectors[2]);
     break;
   case 0xD8:
     if (GetFlag(flag_c_)) {
