@@ -64,9 +64,7 @@ void CPU::JP(uint8_t condition) {
   /* } */
 }
 
-void CPU::JP_HL() {
-  reg_pc_ = reg_hl_->GetRegister() - 1;
-}
+void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister() - 1; }
 
 void CPU::JR() {
   reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
@@ -631,6 +629,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x4C: // LD C, H
     LD(&reg_c_, reg_h_);
+    break;
   case 0x4D: // LD C, L
     LD(&reg_c_, reg_l_);
     break;
