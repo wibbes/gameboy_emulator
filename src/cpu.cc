@@ -169,7 +169,7 @@ void CPU::RL(uint8_t &reg, bool extended) {
   (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
   reg <<= 1;
   reg |= carry;
-  ClearFlag(flag_z_);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
   if (extended && reg == 0) {
@@ -182,7 +182,7 @@ void CPU::RR(uint8_t &reg, bool extended) {
   (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
   reg >>= 1;
   carry ? reg |= 0x80 : reg |= 0;
-  ClearFlag(flag_z_);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
   if (extended && reg == 0) {
@@ -192,7 +192,7 @@ void CPU::RR(uint8_t &reg, bool extended) {
 
 void CPU::RLC(uint8_t &reg, bool extended) {
   (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
-  ClearFlag(flag_z_);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
   reg <<= 1;
@@ -206,7 +206,7 @@ void CPU::RLC(uint8_t &reg, bool extended) {
 
 void CPU::RRC(uint8_t &reg, bool extended) {
   (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
-  ClearFlag(flag_z_);
+  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
   reg >>= 1;
@@ -479,6 +479,8 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x1F:
     RR(reg_a_);
+    // RR, A and RRA are two different opcodes. 0x1F resets Z.
+    ClearFlag(flag_z_);
     break;
   case 0x20:
     if (!GetFlag(flag_z_)) {
