@@ -46,6 +46,7 @@ void CPU::POP(Register16 reg) {
 void CPU::RST(uint8_t jmp_vector) {
   PUSH(reg_pc_ + 1);
   reg_pc_ = static_cast<uint16_t>(rst_jump_vectors[jmp_vector]);
+  reg_pc_--;
 }
 
 void CPU::JP() {
