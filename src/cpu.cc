@@ -346,12 +346,16 @@ void CPU::CPL() {
 void CPU::NOP() { return; }
 
 void CPU::CCF() {
-  reg_a_ ^= (0x01 << flag_c_);
+  reg_f_ ^= (0x01 << flag_c_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
 }
 
-void CPU::SCF() { SetFlag(flag_c_); }
+void CPU::SCF() { 
+  ClearFlag(flag_n_);
+  ClearFlag(flag_h_);
+  SetFlag(flag_c_); 
+}
 
 void CPU::DI() { ime = false; }
 
