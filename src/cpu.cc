@@ -308,8 +308,8 @@ void CPU::SUB(uint8_t &reg) {
 }
 
 void CPU::SBC(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_);
-  int8_t eval = reg_a_ - (reg + carry);
+  uint8_t carry = GetFlag(flag_c_) ? 1 : 0;
+  int eval = reg_a_ - (reg + carry);
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
@@ -351,10 +351,10 @@ void CPU::CCF() {
   ClearFlag(flag_h_);
 }
 
-void CPU::SCF() { 
+void CPU::SCF() {
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
-  SetFlag(flag_c_); 
+  SetFlag(flag_c_);
 }
 
 void CPU::DI() { ime = false; }
@@ -890,7 +890,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0x9F:
-    SBC(reg_b_);
+    SBC(reg_a_);
     break;
   case 0xA0:
     AND(reg_b_);
