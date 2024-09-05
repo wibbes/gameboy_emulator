@@ -107,11 +107,11 @@ void CPU::INC(uint8_t &reg) {
 }
 
 void CPU::INC_HL() {
-  uint8_t eval = reg_hl_->GetRegister() + 1;
-  eval == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  uint8_t value = mmu_->ReadMemory(reg_hl_->GetRegister()) + 1;
+  value == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
-  (eval & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  reg_hl_->SetRegister(eval);
+  (value & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  mmu_->WriteMemory(reg_hl_->GetRegister(), value);
 }
 
 void CPU::DEC(Register16 reg) {
