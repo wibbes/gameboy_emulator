@@ -163,7 +163,7 @@ void CPU::CP(uint8_t &reg) {
   reg_a_ < reg ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
-void CPU::RL(uint8_t &reg, bool extended) {
+void CPU::RL(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
   (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
   reg <<= 1;
@@ -171,12 +171,9 @@ void CPU::RL(uint8_t &reg, bool extended) {
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
-  if (extended && reg == 0) {
-    SetFlag(flag_z_);
-  }
 }
 
-void CPU::RR(uint8_t &reg, bool extended) {
+void CPU::RR(uint8_t &reg) {
   uint8_t carry = GetFlag(flag_c_);
   (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
   reg >>= 1;
@@ -184,37 +181,24 @@ void CPU::RR(uint8_t &reg, bool extended) {
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
-  if (extended && reg == 0) {
-    SetFlag(flag_z_);
-  }
 }
 
-void CPU::RLC(uint8_t &reg, bool extended) {
-  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+void CPU::RLC(uint8_t &reg) {
+  uint8_t msb = (reg & 0x80) >> 7;
+  reg = (reg << 1) | msb;
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
-  reg <<= 1;
-  if (GetFlag(flag_c_)) {
-    reg |= 0x01;
-  }
-  if (extended && reg == 0) {
-    SetFlag(flag_z_);
-  }
+  msb ? SetFlag(flag_c_) : ClearFlag(flag_c_);
 }
 
-void CPU::RRC(uint8_t &reg, bool extended) {
-  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+void CPU::RRC(uint8_t &reg) {
+  uint8_t lsb = reg & 0x01;
+  reg = (reg >> 1) | (lsb << 7);
   reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
   ClearFlag(flag_h_);
-  reg >>= 1;
-  if (GetFlag(flag_c_)) {
-    reg |= 0x80;
-  }
-  if (extended && reg == 0) {
-    SetFlag(flag_z_);
-  }
+  lsb ? SetFlag(flag_c_) : ClearFlag(flag_c_); 
 }
 
 void CPU::SLA(uint8_t &reg) {
@@ -401,6 +385,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x07:
     RLC(reg_a_);
+    ClearFlag(flag_z_);
     break;
   case 0x08: // LD (a16), SP
     mmu_->WriteMemory(
@@ -433,6 +418,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x0F:
     RRC(reg_a_);
+    ClearFlag(flag_z_);
     break;
   case 0x10:
     STOP();
@@ -458,6 +444,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x17:
     RL(reg_a_);
+    ClearFlag(flag_z_);
     break;
   case 0x18:
     JR();

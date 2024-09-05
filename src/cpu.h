@@ -85,10 +85,10 @@ public:
   void XOR(uint8_t &reg);
   void CP(uint8_t &reg);
 
-  void RL(uint8_t &reg, bool extended = false);
-  void RLC(uint8_t &reg, bool extended = false);
-  void RR(uint8_t &reg, bool extended = false);
-  void RRC(uint8_t &reg, bool extended = false);
+  void RL(uint8_t &reg);
+  void RLC(uint8_t &reg);
+  void RR(uint8_t &reg);
+  void RRC(uint8_t &reg);
   void SLA(uint8_t &reg);
   void SRA(uint8_t &reg);
   void SRL(uint8_t &reg);
