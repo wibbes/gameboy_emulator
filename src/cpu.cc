@@ -397,9 +397,7 @@ void CPU::Execute(Instruction instruction) {
         (reg_sp_ & 0xFF00) >> 8);
     break;
   case 0x09:
-    mmu_->WriteMemory(mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2),
-                                                mmu_->ReadMemory(reg_pc_ + 1))),
-                      reg_sp_);
+    ADD_HL(reg_bc_->GetRegister());
     break;
   case 0x0A:
     LD(&reg_a_, mmu_->ReadMemory(reg_bc_->GetRegister()));
