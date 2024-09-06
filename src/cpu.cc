@@ -1195,20 +1195,22 @@ void CPU::Execute(Instruction instruction) {
     RST(rst_jump_vectors[6]);
     break;
   case 0xF8: {
-    int8_t immediate = static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
-    reg_hl_->SetRegister(static_cast<uint16_t>(reg_sp_ + immediate));
+    int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
+    int eval = reg_sp_ + immediate;
+    int test_carries = reg_sp_ ^ immediate ^ eval;
+    reg_hl_->SetRegister(immediate + reg_sp_);
     ClearFlag(flag_z_);
     ClearFlag(flag_n_);
-    (reg_sp_ & 0x0FFF) + (immediate & 0x0FFF) > 0x0FFF ? SetFlag(flag_h_)
-                                                       : ClearFlag(flag_h_);
-    reg_sp_ + immediate > 0xFFFF ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+    ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+    ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+    break;
   }
   case 0xF9:
     reg_sp_ = reg_hl_->GetRegister();
     break;
   case 0xFA: {
-    uint16_t byte =
-        mmu_->ReadMemory(MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+    uint16_t byte = mmu_->ReadMemory(
+        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     LD(&reg_a_, byte);
     break;
   }
