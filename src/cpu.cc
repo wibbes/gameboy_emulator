@@ -115,7 +115,7 @@ void CPU::INC_HL() {
 }
 
 void CPU::DEC(Register16 reg) {
-  reg.SetRegister(reg.GetRegister() + 1);
+  reg.SetRegister(reg.GetRegister() - 1);
   // instruction does not change registers
 }
 
