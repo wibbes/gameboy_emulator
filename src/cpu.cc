@@ -87,12 +87,12 @@ void CPU::CALL() {
 void CPU::BIT(uint8_t reg, uint8_t bit) {
   GetBit(reg, bit) == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   ClearFlag(flag_n_);
-  SetFlag(flag_c_);
+  SetFlag(flag_h_);
 }
 
-void CPU::SET(uint8_t reg, uint8_t bit) { reg |= 1UL << bit; }
+void CPU::SET(uint8_t &reg, uint8_t bit) { reg |= 1UL << bit; }
 
-void CPU::RES(uint8_t reg, uint8_t bit) { reg &= ~(1UL << bit); }
+void CPU::RES(uint8_t& reg, uint8_t bit) { reg &= ~(1UL << bit); }
 
 void CPU::INC(Register16 reg) {
   reg.SetRegister(reg.GetRegister() + 1);
