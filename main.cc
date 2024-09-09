@@ -4,12 +4,17 @@
 #include <fstream>
 
 int main(int argc, char *argv[]) {
+  bool logging_enabled = true;
+  for (int arg = 1; arg < argc; ++arg) {
+    if (std::string(argv[arg]) == "--notrace")
+      logging_enabled = false;
+  }
   Cartridge cartridge;
   CPU cpu(&cartridge.data);
   std::cout << "Running CPU..." << std::endl;
   std::ofstream log("debug.txt");
   for (;;) {
-    if (log.is_open()) {
+    if (logging_enabled && log.is_open()) {
       log << std::setfill('0') << std::hex << std::uppercase
           << "A:" << std::setw(2) << +cpu.reg_a_ << " F:" << std::setw(2)
           << +cpu.reg_f_ << " B:" << std::setw(2) << +cpu.reg_b_
@@ -22,8 +27,8 @@ int main(int argc, char *argv[]) {
           << +cpu.mmu_->memory_[cpu.reg_pc_ + 1] << "," << std::setw(2)
           << +cpu.mmu_->memory_[cpu.reg_pc_ + 2] << "," << std::setw(2)
           << +cpu.mmu_->memory_[cpu.reg_pc_ + 3] << std::endl;
-      cpu.Run();
     }
+    cpu.Run();
   }
   log.close();
   return 0;
