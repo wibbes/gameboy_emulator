@@ -1,3 +1,6 @@
+#ifndef GAMEBOY_EMULATOR_SRC_INSTRUCTION_H_
+#define GAMEBOY_EMULATOR_SRC_INSTRUCTION_H_
+
 #include <array>
 #include <cstdint>
 #include <string>
@@ -272,3 +275,5 @@ const static std::vector<Instruction> instructions{
     Instruction(0xFD, "NONE", 1, 1),
     Instruction(0xFE, "CP d8", 2, 1),
     Instruction(0xFF, "RST 38H", 1, 1)};
+
+#endif
