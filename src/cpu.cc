@@ -92,7 +92,7 @@ void CPU::BIT(uint8_t reg, uint8_t bit) {
 
 void CPU::SET(uint8_t &reg, uint8_t bit) { reg |= 1UL << bit; }
 
-void CPU::RES(uint8_t& reg, uint8_t bit) { reg &= ~(1UL << bit); }
+void CPU::RES(uint8_t &reg, uint8_t bit) { reg &= ~(1UL << bit); }
 
 void CPU::INC(Register16 reg) {
   reg.SetRegister(reg.GetRegister() + 1);
@@ -1209,7 +1209,7 @@ void CPU::Execute(Instruction instruction) {
     reg_sp_ = reg_hl_->GetRegister();
     break;
   case 0xFA: {
-    uint16_t byte = mmu_->ReadMemory(
+    uint8_t byte = mmu_->ReadMemory(
         MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     LD(&reg_a_, byte);
     break;
