@@ -1,6 +1,7 @@
 #ifndef GAMEBOY_EMULATOR_SRC_CPU_H_
 #define GAMEBOY_EMULATOR_SRC_CPU_H_
 
+#include <bitset>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -8,11 +9,25 @@
 #include "instructions.h"
 #include "mmu.h"
 
+class InterruptRegister {
+public:
+  InterruptRegister() : state_(0x0b00000) {};
+  ~InterruptRegister() = default;
+  std::bitset<5> state_;
+
+  void SetState(uint8_t state);
+  void SetInterrupt(uint8_t interrupt);
+  uint8_t GetState();
+  uint8_t GetInterrupt(uint8_t interrupt);
+
+private:
+};
+
 class Register16 {
 public:
   uint8_t *low_;
   uint8_t *high_;
-  Register16(uint8_t *hh, uint8_t *ll) : high_(hh), low_(ll){};
+  Register16(uint8_t *hh, uint8_t *ll) : high_(hh), low_(ll) {};
   ~Register16() = default;
   uint16_t GetRegister();
   void SetRegister(uint16_t value);
@@ -28,6 +43,7 @@ public:
   uint16_t reg_sp_, reg_pc_;
   std::unique_ptr<Register16> reg_af_, reg_bc_, reg_de_, reg_hl_;
   std::unique_ptr<MMU> mmu_;
+  std::unique_ptr<InterruptRegister> ie_, if_;
   bool ime, halted;
   CPU(std::vector<uint8_t> *cartridge)
       : flag_z_(0x07), flag_n_(0x06), flag_h_(0x05), flag_c_(0x04),
@@ -39,7 +55,9 @@ public:
         reg_bc_(std::make_unique<Register16>(&reg_b_, &reg_c_)),
         reg_de_(std::make_unique<Register16>(&reg_d_, &reg_e_)),
         reg_hl_(std::make_unique<Register16>(&reg_h_, &reg_l_)),
-        mmu_(std::make_unique<MMU>(cartridge)), ime(false), halted(false) {}
+        mmu_(std::make_unique<MMU>(cartridge)),
+        ie_(std::make_unique<InterruptRegister>()),
+        if_(std::make_unique<InterruptRegister>()), ime(false), halted(false) {}
   ~CPU() = default;
 
   bool GetFlag(uint8_t flag);
