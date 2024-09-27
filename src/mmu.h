@@ -1,14 +1,33 @@
 #ifndef GAMEBOY_EMULATOR_SRC_MMU_H_
 #define GAMEBOY_EMULATOR_SRC_MMU_H_
 
+#include <bitset>
 #include <cstdint>
-#include <vector>
 #include <iostream>
+#include <memory>
+#include <vector>
+
+class InterruptRegister {
+public:
+  InterruptRegister() : state_(0x0b00000){};
+  ~InterruptRegister() = default;
+  std::bitset<5> state_;
+
+  void SetState(uint8_t state);
+  void SetInterrupt(uint8_t interrupt);
+  uint8_t GetState();
+  uint8_t GetInterrupt(uint8_t interrupt);
+
+private:
+};
 
 class MMU {
 public:
   std::vector<uint8_t> memory_;
-  MMU(std::vector<uint8_t>* cart) : memory_(*cart){};
+  std::unique_ptr<InterruptRegister> ie_, if_;
+  MMU(std::vector<uint8_t> *cart)
+      : memory_(*cart), ie_(std::make_unique<InterruptRegister>()),
+        if_(std::make_unique<InterruptRegister>()) {}
   ~MMU() = default;
 
   void WriteMemory(uint16_t address, uint8_t value);
