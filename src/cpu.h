@@ -44,7 +44,7 @@ public:
   std::unique_ptr<Register16> reg_af_, reg_bc_, reg_de_, reg_hl_;
   std::unique_ptr<MMU> mmu_;
   std::unique_ptr<InterruptRegister> ie_, if_;
-  bool ime, halted;
+  bool ime, halted, ime_enable_pending;
   CPU(std::vector<uint8_t> *cartridge)
       : flag_z_(0x07), flag_n_(0x06), flag_h_(0x05), flag_c_(0x04),
         rst_jump_vectors({0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38}),
@@ -57,7 +57,7 @@ public:
         reg_hl_(std::make_unique<Register16>(&reg_h_, &reg_l_)),
         mmu_(std::make_unique<MMU>(cartridge)),
         ie_(std::make_unique<InterruptRegister>()),
-        if_(std::make_unique<InterruptRegister>()), ime(false), halted(false) {}
+        if_(std::make_unique<InterruptRegister>()), ime(false), halted(false) , ime_enable_pending(false){}
   ~CPU() = default;
 
   bool GetFlag(uint8_t flag);
