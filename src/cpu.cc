@@ -340,11 +340,11 @@ void CPU::SCF() {
   SetFlag(flag_c_);
 }
 
-void CPU::DI() { ime = false; }
+void CPU::DI() { ime_ = false; }
 
-void CPU::EI() { ime = true; }
+void CPU::EI() { ime_ = true; }
 
-void CPU::HALT() { halted = true; }
+void CPU::HALT() { halted_ = true; }
 
 void CPU::STOP() {
   // Before calling this...
@@ -359,18 +359,19 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) {
   Execute(instructions.at(opcode));
   // EI enabling. Needs to be done after the next instruction cycle.
-  if (opcode != 0xFB && ime_enable_pending) {
+  if (opcode != 0xFB && ime_enable_pending_) {
     EI();
-    ime_enable_pending = false;
+    ime_enable_pending_ = false;
   }
   // Check if any interrupts need to be serviced.
-  if (ime &&
+  if (ime_ &&
       (mmu_->ie_->GetState() & mmu_->if_->GetState())) { // Interrupts pending
-    ime = false;
+    ime_ = false;
+    // Loop through each interrupt
     for (auto i = 0ull; i < 5; ++i) {
+      // If pending interrupt is found, handle it
       if (mmu_->ie_->GetInterrupt(i) && mmu_->if_->GetInterrupt(i)) {
         HandleInterrupt(i);
-        Execute(instructions.at(0xD9));
       }
     }
   }
@@ -379,22 +380,18 @@ void CPU::Decode(uint8_t opcode) {
 void CPU::HandleInterrupt(uint8_t interrupt) {
   mmu_->if_->ResetInterrupt(interrupt);
   PUSH(reg_pc_);
-  switch (interrupt) {
-  case 0: // VBLANK
-    reg_pc_ = 0x40;
-    break;
-  case 1: // LCD STAT
-    reg_pc_ = 0x48;
-    break;
-  case 2: // TIMER
-    reg_pc_ = 0x50;
-    break;
-  case 3: // SERIAL
-    reg_pc_ = 0x58;
-    break;
-  case 4: // JOYPAD
-    reg_pc_ = 0x60;
-    break;
+  reg_pc_ = interrupt_vectors_[interrupt];
+  // Run the ISR until RETI is found
+  bool break_isr = false;
+  while (!break_isr) {
+    Execute(instructions.at(mmu_->ReadMemory(reg_pc_)));
+    // Normal RET or RETI
+    if (mmu_->ReadMemory(reg_pc_) == 0xC9 ||
+        mmu_->ReadMemory(reg_pc_) == 0xD9) {
+      // RETI
+      Execute(instructions.at(0xD9));
+      break_isr = true;
+    }
   }
 }
 
@@ -1123,7 +1120,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD9:
     RET();
-    ime = true;
+    ime_ = true;
     break;
   case 0xDA:
     if (GetFlag(flag_c_)) {
@@ -1254,7 +1251,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xFB:
-    ime_enable_pending = true;
+    ime_enable_pending_ = true;
     break;
   case 0xFC:
     break;
