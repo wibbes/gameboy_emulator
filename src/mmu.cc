@@ -29,12 +29,10 @@ void MMU::WriteMemory(uint16_t address, uint8_t value) {
     std::cout << std::hex << value;
     break;
   case 0xFF0F: // interrupt flags
-    std::cout << "Wrote " << +value << " to IF" << '\n';
     if_->SetState(value);
     memory_[0xFF0F] = value;
     break;
   case 0xFFFF: // Interrupt enable
-    std::cout << "Wrote " << +value << " to IE" << '\n';
     ie_->SetState(value);
     memory_[0xFFFF] = value;
     break;

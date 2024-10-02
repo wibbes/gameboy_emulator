@@ -1123,7 +1123,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD9:
     RET();
-    ime = false;
+    ime = true;
     break;
   case 0xDA:
     if (GetFlag(flag_c_)) {
@@ -1255,7 +1255,6 @@ void CPU::Execute(Instruction instruction) {
   }
   case 0xFB:
     ime_enable_pending = true;
-    std::cout << "EI poggiessss " <<  +mmu_->ReadMemory(reg_pc_ + 1)<< "\n";
     break;
   case 0xFC:
     break;
