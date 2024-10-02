@@ -358,10 +358,17 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 
 void CPU::Decode(uint8_t opcode) {
   Execute(instructions.at(opcode));
-  if (opcode != 0xFB && ime_enable_pending) {
+  // EI enabling. Needs to be done after the next instruction cycle.
+  if (opcode != 0xFB && ime_enable_pending) { 
     EI();
     ime_enable_pending = false;
   }
+  // Check if any interrupts need to be serviced.
+  if(ime) {
+    if(mmu_->ie_->GetState() & mmu_->if_->GetState()) { // Interrupts pending
+        ime = false;
+    }
+  } 
 }
 
 void CPU::Execute(Instruction instruction) {
