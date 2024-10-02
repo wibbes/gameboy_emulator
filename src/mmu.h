@@ -15,6 +15,7 @@ public:
 
   void SetState(uint8_t state);
   void SetInterrupt(uint8_t interrupt);
+  void ResetInterrupt(uint8_t interrupt);
   uint8_t GetState();
   uint8_t GetInterrupt(uint8_t interrupt);
 

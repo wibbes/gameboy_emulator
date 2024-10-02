@@ -359,16 +359,43 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 void CPU::Decode(uint8_t opcode) {
   Execute(instructions.at(opcode));
   // EI enabling. Needs to be done after the next instruction cycle.
-  if (opcode != 0xFB && ime_enable_pending) { 
+  if (opcode != 0xFB && ime_enable_pending) {
     EI();
     ime_enable_pending = false;
   }
   // Check if any interrupts need to be serviced.
-  if(ime) {
-    if(mmu_->ie_->GetState() & mmu_->if_->GetState()) { // Interrupts pending
-        ime = false;
+  if (ime &&
+      (mmu_->ie_->GetState() & mmu_->if_->GetState())) { // Interrupts pending
+    ime = false;
+    for (auto i = 0ull; i < 5; ++i) {
+      if (mmu_->ie_->GetInterrupt(i) && mmu_->if_->GetInterrupt(i)) {
+        HandleInterrupt(i);
+        Execute(instructions.at(0xD9));
+      }
     }
-  } 
+  }
+}
+
+void CPU::HandleInterrupt(uint8_t interrupt) {
+  mmu_->if_->ResetInterrupt(interrupt);
+  PUSH(reg_pc_);
+  switch (interrupt) {
+  case 0: // VBLANK
+    reg_pc_ = 0x40;
+    break;
+  case 1: // LCD STAT
+    reg_pc_ = 0x48;
+    break;
+  case 2: // TIMER
+    reg_pc_ = 0x50;
+    break;
+  case 3: // SERIAL
+    reg_pc_ = 0x58;
+    break;
+  case 4: // JOYPAD
+    reg_pc_ = 0x60;
+    break;
+  }
 }
 
 void CPU::Execute(Instruction instruction) {
@@ -1228,7 +1255,7 @@ void CPU::Execute(Instruction instruction) {
   }
   case 0xFB:
     ime_enable_pending = true;
-    // EI();
+    std::cout << "EI poggiessss " <<  +mmu_->ReadMemory(reg_pc_ + 1)<< "\n";
     break;
   case 0xFC:
     break;
