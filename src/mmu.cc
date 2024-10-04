@@ -43,7 +43,14 @@ void MMU::WriteMemory(uint16_t address, uint8_t value) {
 }
 
 uint8_t MMU::ReadMemory(uint16_t address) {
-  if (address == 0xFF44)
+  switch (address) {
+  case 0xFF0F: // interrupt flags
+    return if_->GetState();
+  case 0xFFFF: // interrupt enable
+    return ie_->GetState();
+  case 0xFF44:
     return 0x90;
-  return memory_[address];
+  default:
+    return memory_[address];
+  }
 }

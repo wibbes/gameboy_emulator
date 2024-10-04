@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "instructions.h"
 uint16_t Register16::GetRegister() { return *high_ << 8 | (*low_ & 0x00FF); }
 
 void Register16::SetRegister(uint16_t value) {
@@ -358,11 +359,7 @@ void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 
 void CPU::Decode(uint8_t opcode) {
   Execute(instructions.at(opcode));
-  // EI enabling. Needs to be done after the next instruction cycle.
-  if (opcode != 0xFB && ime_enable_pending_) {
-    EI();
-    ime_enable_pending_ = false;
-  }
+
   // Check if any interrupts need to be serviced.
   if (ime_ &&
       (mmu_->ie_->GetState() & mmu_->if_->GetState())) { // Interrupts pending
@@ -375,6 +372,11 @@ void CPU::Decode(uint8_t opcode) {
       }
     }
   }
+  // EI enabling. Needs to be done after the next instruction cycle.
+  if (opcode != 0xFB && ime_enable_pending_) {
+    EI();
+    ime_enable_pending_ = false;
+  }
 }
 
 void CPU::HandleInterrupt(uint8_t interrupt) {
@@ -382,15 +384,15 @@ void CPU::HandleInterrupt(uint8_t interrupt) {
   PUSH(reg_pc_);
   reg_pc_ = interrupt_vectors_[interrupt];
   // Run the ISR until RETI is found
-  bool break_isr = false;
-  while (!break_isr) {
-    Execute(instructions.at(mmu_->ReadMemory(reg_pc_)));
-    // Normal RET or RETI
-    if (mmu_->ReadMemory(reg_pc_) == 0xC9 ||
-        mmu_->ReadMemory(reg_pc_) == 0xD9) {
-      // RETI
-      Execute(instructions.at(0xD9));
-      break_isr = true;
+  while (true) {
+    uint8_t opcode = mmu_->ReadMemory(reg_pc_);
+    Execute(instructions.at(opcode));
+    // PC increments within Execute, so this checks next PC value for
+    // RET or RETI opcodes then runs it.
+    opcode = mmu_->ReadMemory(reg_pc_);
+    if (opcode == 0xC9 || opcode == 0xD9) {
+      Execute(instructions.at(opcode));
+      break;
     }
   }
 }
