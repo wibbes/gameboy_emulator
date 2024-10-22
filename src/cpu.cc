@@ -1066,7 +1066,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xCB:
     ++reg_pc_;
-    ExecuteExtended(instructions.at(mmu_->ReadMemory(reg_pc_)));
+    ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_)));
     break;
   case 0xCC:
     if (GetFlag(flag_z_)) {
@@ -2108,4 +2108,5 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_a_, 7);
     break;
   }
+  reg_pc_ += instruction.length_;
 }
