@@ -367,9 +367,25 @@ void CPU::Decode(uint8_t opcode) {
       // If pending interrupt is found, handle it
       if (mmu_->ie_->GetInterrupt(i) && mmu_->if_->GetInterrupt(i)) {
         HandleInterrupt(i);
+        halted_ = false;
       }
     }
   }
+
+  // Loop HALT until interrupt is triggered
+  if (halted_) {
+    if (mmu_->ie_->GetState() & mmu_->if_->GetState()) {
+      halted_ = false;
+    }
+    // If still halted
+    if (halted_) {
+      //Sent as t-states
+      UpdateTimer(4);
+      // Skip execution
+      return; 
+    }
+  }
+
   Execute(instructions.at(opcode));
   UpdateTimer(instructions.at(opcode).cycles_ * 4);
   // EI enabling. Needs to be done after the next instruction cycle.
@@ -406,7 +422,8 @@ void CPU::UpdateDIV(uint8_t cycles) {
 }
 
 void CPU::UpdateTIMA(uint8_t cycles) {
-  uint32_t clock_rate = mmu_->timer_->frequencies[mmu_->timer_->tac_.to_ulong() & 0x03];
+  uint32_t clock_rate =
+      mmu_->timer_->frequencies[mmu_->timer_->tac_.to_ulong() & 0x03];
   mmu_->timer_->tima_internal_counter += cycles;
 
   if (mmu_->timer_->tima_reset_pending_) {
