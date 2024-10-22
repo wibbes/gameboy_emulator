@@ -3,6 +3,7 @@
 
 #include "instructions.h"
 #include "mmu.h"
+#include <bitset>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -11,7 +12,7 @@ class Register16 {
 public:
   uint8_t *low_;
   uint8_t *high_;
-  Register16(uint8_t *hh, uint8_t *ll) : high_(hh), low_(ll){};
+  Register16(uint8_t *hh, uint8_t *ll) : high_(hh), low_(ll) {};
   ~Register16() = default;
   uint16_t GetRegister();
   void SetRegister(uint16_t value);
@@ -57,6 +58,10 @@ public:
   void Execute(Instruction instruction);
   void ExecuteExtended(Instruction instruction);
   void HandleInterrupt(uint8_t interrupt);
+
+  void UpdateDIV(uint8_t cycles);
+  void UpdateTIMA(uint8_t cycles);
+  void UpdateTimer(uint8_t cycles);
 
   void LD(Register16 reg, uint16_t value);
   void LD(uint8_t *reg, uint8_t value);

@@ -28,6 +28,14 @@ void MMU::WriteMemory(uint16_t address, uint8_t value) {
   case 0xFF01:
     std::cout << std::hex << value;
     break;
+  case 0xFF04:
+    timer_->div_ = 0x0;
+    memory_[0xFF05] = 0x0;
+    break;
+  case 0xFF07:
+    timer_->tac_ = value;
+    memory_[0xFF07] = value;
+    break;
   case 0xFF0F: // interrupt flags
     if_->SetState(value);
     memory_[0xFF0F] = value;

@@ -358,8 +358,6 @@ void CPU::Run() { Fetch(); }
 void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
 
 void CPU::Decode(uint8_t opcode) {
-  Execute(instructions.at(opcode));
-
   // Check if any interrupts need to be serviced.
   if (ime_ &&
       (mmu_->ie_->GetState() & mmu_->if_->GetState())) { // Interrupts pending
@@ -372,6 +370,8 @@ void CPU::Decode(uint8_t opcode) {
       }
     }
   }
+  Execute(instructions.at(opcode));
+  UpdateTimer(instructions.at(opcode).cycles_ * 4);
   // EI enabling. Needs to be done after the next instruction cycle.
   if (opcode != 0xFB && ime_enable_pending_) {
     EI();
@@ -394,6 +394,46 @@ void CPU::HandleInterrupt(uint8_t interrupt) {
       Execute(instructions.at(opcode));
       break;
     }
+  }
+}
+
+void CPU::UpdateDIV(uint8_t cycles) {
+  mmu_->timer_->div_internal_counter += cycles;
+  while (mmu_->timer_->div_internal_counter >= 256) {
+    ++mmu_->timer_->div_;
+    mmu_->timer_->div_internal_counter -= 256;
+  }
+}
+
+void CPU::UpdateTIMA(uint8_t cycles) {
+  uint32_t clock_rate = mmu_->timer_->frequencies[mmu_->timer_->tac_.to_ulong() & 0x03];
+  mmu_->timer_->tima_internal_counter += cycles;
+
+  if (mmu_->timer_->tima_reset_pending_) {
+    mmu_->timer_->tima_ = mmu_->timer_->tma_;
+    mmu_->timer_->tima_reset_pending_ = false;
+    mmu_->WriteMemory(0xFF05, mmu_->timer_->tima_);
+  }
+
+  while (mmu_->timer_->tima_internal_counter >= clock_rate) {
+    mmu_->timer_->tima_internal_counter -= clock_rate;
+    if (mmu_->timer_->tima_ == 0xFF) {
+      mmu_->if_->SetInterrupt(2);
+      mmu_->timer_->tima_ = 0x00;
+      mmu_->timer_->tima_reset_pending_ = true;
+    } else {
+      ++mmu_->timer_->tima_;
+    }
+    mmu_->WriteMemory(0xFF05, mmu_->timer_->tima_);
+  }
+}
+
+void CPU::UpdateTimer(uint8_t cycles) {
+  mmu_->timer_->tac_ = mmu_->ReadMemory(0xFF07);
+  UpdateDIV(cycles);
+  // Is the timer enabled?
+  if (mmu_->timer_->tac_.test(2)) {
+    UpdateTIMA(cycles);
   }
 }
 
