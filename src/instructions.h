@@ -222,7 +222,7 @@ const static std::vector<Instruction> instructions{
     Instruction(0xC8, "RET Z", 1, 5),
     Instruction(0xC9, "RET", 1, 4),
     Instruction(0xCA, "JP Z,a16", 3, 4),
-    Instruction(0xCB, "PREFIX CB", 2, 2),
+    Instruction(0xCB, "PREFIX CB", 1, 1),
     Instruction(0xCC, "CALL Z,a16", 3, 6),
     Instruction(0xCD, "CALL a16", 3, 6),
     Instruction(0xCE, "ADC A,d8", 2, 2),

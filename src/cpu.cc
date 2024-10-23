@@ -379,10 +379,10 @@ void CPU::Decode(uint8_t opcode) {
     }
     // If still halted
     if (halted_) {
-      //Sent as t-states
+      // Sent as t-states
       UpdateTimer(4);
       // Skip execution
-      return; 
+      return;
     }
   }
 
@@ -1122,8 +1122,7 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0xCB:
-    ++reg_pc_;
-    ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_)));
+    ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0xCC:
     if (GetFlag(flag_z_)) {
