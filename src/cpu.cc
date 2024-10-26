@@ -1352,6 +1352,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x06: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RLC(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x07:
@@ -1378,6 +1379,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x0E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RRC(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x0F:
@@ -1404,6 +1406,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x16: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RL(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x17:
@@ -1430,6 +1433,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x1E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RR(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x1F:
@@ -1456,6 +1460,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x26: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SLA(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x27:
@@ -1482,6 +1487,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x2E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SRA(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x2F:
@@ -1508,6 +1514,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x36: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SWAP(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x37:
@@ -1534,6 +1541,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x3E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SRL(byte);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x3F:
@@ -1560,6 +1568,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x46: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 0);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x47:
@@ -1586,6 +1595,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x4E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 1);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x4F:
@@ -1612,6 +1622,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x56: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 2);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x57:
@@ -1638,6 +1649,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x5E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 3);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x5F:
@@ -1664,6 +1676,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x66: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 4);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x67:
@@ -1690,6 +1703,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x6E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 5);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x6F:
@@ -1716,6 +1730,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x76: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 6);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x77:
@@ -1742,6 +1757,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x7E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     BIT(byte, 7);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x7F:
@@ -1768,6 +1784,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x86: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 0);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x87:
@@ -1794,6 +1811,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x8E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 1);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x8F:
@@ -1820,6 +1838,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x96: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 2);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x97:
@@ -1846,6 +1865,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0x9E: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 3);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0x9F:
@@ -1872,6 +1892,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xA6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 4);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xA7:
@@ -1898,6 +1919,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xAE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 5);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xAF:
@@ -1924,6 +1946,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xB6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 6);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xB7:
@@ -1950,6 +1973,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xBE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     RES(byte, 7);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xBF:
@@ -1976,6 +2000,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xC6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 0);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xC7:
@@ -2002,6 +2027,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xCE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 1);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xCF:
@@ -2028,6 +2054,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xD6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 2);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xD7:
@@ -2054,6 +2081,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xDE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 3);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xDF:
@@ -2080,6 +2108,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xE6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 4);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xE7:
@@ -2106,6 +2135,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xEE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 5);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xEF:
@@ -2132,6 +2162,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xF6: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 6);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xF7:
@@ -2158,6 +2189,7 @@ void CPU::ExecuteExtended(Instruction instruction) {
   case 0xFE: {
     uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
     SET(byte, 7);
+    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
     break;
   }
   case 0xFF:
