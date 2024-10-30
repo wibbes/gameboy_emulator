@@ -387,7 +387,15 @@ void CPU::Decode(uint8_t opcode) {
   }
 
   Execute(instructions.at(opcode));
-  UpdateTimer(instructions.at(opcode).cycles_ * 4);
+  
+  uint8_t t_cycles = instructions.at(opcode).cycles_;
+  
+  // Check instructions which have variable cycle counts depending on outcome
+  if(conditional_m_cycles_ != 0) {
+    t_cycles += conditional_m_cycles_;
+    conditional_m_cycles_ = 0;
+  }
+  UpdateTimer(t_cycles * 4);
   // EI enabling. Needs to be done after the next instruction cycle.
   if (opcode != 0xFB && ime_enable_pending_) {
     EI();
@@ -567,6 +575,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x20:
     if (!GetFlag(flag_z_)) {
+      conditional_m_cycles_ = 1;
       JR();
     }
     break;
@@ -596,6 +605,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x28:
     if (GetFlag(flag_z_)) {
+      conditional_m_cycles_ = 1;
       JR();
     }
     break;
@@ -623,6 +633,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x30:
     if (!GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 1;
       JR();
     }
     break;
@@ -651,6 +662,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x38:
     if (GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 1;
       JR();
     }
     break;
@@ -1078,6 +1090,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xC0:
     if (!GetFlag(flag_z_)) {
+      conditional_m_cycles_ = 3;
       RET();
     }
     break;
@@ -1086,6 +1099,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xC2:
     if (!GetFlag(flag_z_)) {
+      conditional_m_cycles_ = 1;
       JP();
     }
     break;
@@ -1094,6 +1108,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xC4:
     if (!GetFlag(flag_z_)) {
+      conditional_m_cycles_ = 3;
       CALL();
     }
     break;
@@ -1117,7 +1132,8 @@ void CPU::Execute(Instruction instruction) {
     RET();
     break;
   case 0xCA:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(flag_z_)) { 
+      conditional_m_cycles_ = 1;
       JP();
     }
     break;
@@ -1125,7 +1141,8 @@ void CPU::Execute(Instruction instruction) {
     ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0xCC:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(flag_z_)) { 
+      conditional_m_cycles_ = 3;
       CALL();
     }
     break;
@@ -1142,6 +1159,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD0:
     if (!GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 3;
       RET();
     }
     break;
@@ -1150,6 +1168,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD2:
     if (!GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 1;
       JP();
     }
     break;
@@ -1157,6 +1176,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD4:
     if (!GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 3;
       CALL();
     }
     break;
@@ -1173,6 +1193,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xD8:
     if (GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 3;
       RET();
     }
     break;
@@ -1182,6 +1203,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xDA:
     if (GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 1;
       JP();
     }
     break;
@@ -1189,6 +1211,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xDC:
     if (GetFlag(flag_c_)) {
+      conditional_m_cycles_ = 3;
       CALL();
     }
     break;
