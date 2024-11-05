@@ -21,7 +21,6 @@ public:
   void UpdateTimer(uint8_t cycles);
   void UpdateDIV(uint8_t cycles);
   void UpdateTIMA(uint8_t cycles);
-  void UpdateTAC(uint8_t value);
 
 private:
 };
