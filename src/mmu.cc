@@ -25,22 +25,25 @@ uint8_t InterruptRegister::GetInterrupt(uint8_t interrupt) {
 
 void MMU::WriteMemory(uint16_t address, uint8_t value) {
   switch (address) {
+  // Serial
   case 0xFF01:
     std::cout << std::hex << value;
     break;
+  // DIV
   case 0xFF04:
-    timer_->div_ = 0x0;
-    memory_[0xFF05] = 0x0;
+    memory_[0xFF04] = 0x00;
     break;
+  // TAC
   case 0xFF07:
-    timer_->tac_ = value;
     memory_[0xFF07] = value;
     break;
-  case 0xFF0F: // interrupt flags
+  // Interrupt Flags
+  case 0xFF0F:
     if_->SetState(value);
     memory_[0xFF0F] = value;
     break;
-  case 0xFFFF: // Interrupt enable
+  // Interrupt Enable
+  case 0xFFFF:
     ie_->SetState(value);
     memory_[0xFFFF] = value;
     break;

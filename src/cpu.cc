@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "instructions.h"
+
 uint16_t Register16::GetRegister() { return *high_ << 8 | (*low_ & 0x00FF); }
 
 void Register16::SetRegister(uint16_t value) {
@@ -60,9 +61,6 @@ void CPU::JP(uint8_t condition) {
   if (flag & condition) {
     JP();
   }
-  /* else { // If its a zero flag */
-  /*   ++reg_pc_; */
-  /* } */
 }
 
 void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister() - 1; }
@@ -95,8 +93,8 @@ void CPU::SET(uint8_t &reg, uint8_t bit) { reg |= 1UL << bit; }
 void CPU::RES(uint8_t &reg, uint8_t bit) { reg &= ~(1UL << bit); }
 
 void CPU::INC(Register16 reg) {
+  // Does not change registers
   reg.SetRegister(reg.GetRegister() + 1);
-  // instruction does not change registers
 }
 
 void CPU::INC(uint8_t &reg) {
@@ -115,8 +113,8 @@ void CPU::INC_HL() {
 }
 
 void CPU::DEC(Register16 reg) {
+  // Does not change registers
   reg.SetRegister(reg.GetRegister() - 1);
-  // instruction does not change registers
 }
 
 void CPU::DEC(uint8_t &reg) {
@@ -141,6 +139,7 @@ void CPU::AND(uint8_t &reg) {
   SetFlag(flag_h_);
   ClearFlag(flag_c_);
 }
+
 void CPU::OR(uint8_t &reg) {
   reg_a_ |= reg;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
@@ -148,6 +147,7 @@ void CPU::OR(uint8_t &reg) {
   ClearFlag(flag_n_);
   ClearFlag(flag_c_);
 }
+
 void CPU::XOR(uint8_t &reg) {
   reg_a_ ^= reg;
   reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
@@ -155,6 +155,7 @@ void CPU::XOR(uint8_t &reg) {
   ClearFlag(flag_n_);
   ClearFlag(flag_c_);
 }
+
 void CPU::CP(uint8_t &reg) {
   reg_a_ == reg ? SetFlag(flag_z_) : ClearFlag(flag_z_);
   SetFlag(flag_n_);
@@ -380,22 +381,22 @@ void CPU::Decode(uint8_t opcode) {
     // If still halted
     if (halted_) {
       // Sent as t-states
-      UpdateTimer(4);
+      timer_->UpdateTimer(4);
       // Skip execution
       return;
     }
   }
 
   Execute(instructions.at(opcode));
-  
+
   uint8_t t_cycles = instructions.at(opcode).cycles_;
-  
+
   // Check instructions which have variable cycle counts depending on outcome
-  if(conditional_m_cycles_ != 0) {
+  if (conditional_m_cycles_ != 0) {
     t_cycles += conditional_m_cycles_;
     conditional_m_cycles_ = 0;
   }
-  UpdateTimer(t_cycles * 4);
+  timer_->UpdateTimer(t_cycles * 4);
   // EI enabling. Needs to be done after the next instruction cycle.
   if (opcode != 0xFB && ime_enable_pending_) {
     EI();
@@ -418,47 +419,6 @@ void CPU::HandleInterrupt(uint8_t interrupt) {
       Execute(instructions.at(opcode));
       break;
     }
-  }
-}
-
-void CPU::UpdateDIV(uint8_t cycles) {
-  mmu_->timer_->div_internal_counter += cycles;
-  while (mmu_->timer_->div_internal_counter >= 256) {
-    ++mmu_->timer_->div_;
-    mmu_->timer_->div_internal_counter -= 256;
-  }
-}
-
-void CPU::UpdateTIMA(uint8_t cycles) {
-  uint32_t clock_rate =
-      mmu_->timer_->frequencies[mmu_->timer_->tac_.to_ulong() & 0x03];
-  mmu_->timer_->tima_internal_counter += cycles;
-
-  if (mmu_->timer_->tima_reset_pending_) {
-    mmu_->timer_->tima_ = mmu_->timer_->tma_;
-    mmu_->timer_->tima_reset_pending_ = false;
-    mmu_->WriteMemory(0xFF05, mmu_->timer_->tima_);
-  }
-
-  while (mmu_->timer_->tima_internal_counter >= clock_rate) {
-    mmu_->timer_->tima_internal_counter -= clock_rate;
-    if (mmu_->timer_->tima_ == 0xFF) {
-      mmu_->if_->SetInterrupt(2);
-      mmu_->timer_->tima_ = 0x00;
-      mmu_->timer_->tima_reset_pending_ = true;
-    } else {
-      ++mmu_->timer_->tima_;
-    }
-    mmu_->WriteMemory(0xFF05, mmu_->timer_->tima_);
-  }
-}
-
-void CPU::UpdateTimer(uint8_t cycles) {
-  mmu_->timer_->tac_ = mmu_->ReadMemory(0xFF07);
-  UpdateDIV(cycles);
-  // Is the timer enabled?
-  if (mmu_->timer_->tac_.test(2)) {
-    UpdateTIMA(cycles);
   }
 }
 
@@ -1132,7 +1092,7 @@ void CPU::Execute(Instruction instruction) {
     RET();
     break;
   case 0xCA:
-    if (GetFlag(flag_z_)) { 
+    if (GetFlag(flag_z_)) {
       conditional_m_cycles_ = 1;
       JP();
     }
@@ -1141,7 +1101,7 @@ void CPU::Execute(Instruction instruction) {
     ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0xCC:
-    if (GetFlag(flag_z_)) { 
+    if (GetFlag(flag_z_)) {
       conditional_m_cycles_ = 3;
       CALL();
     }

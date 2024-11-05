@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project("gameboy_emulator")
-set (SOURCES "main.cc" "src/cpu.cc" "src/cartridge.cc" "src/mmu.cc")
+set (SOURCES "main.cc" "src/cpu.cc" "src/cartridge.cc" "src/mmu.cc" "src/timer.cc")
 set(CMAKE_BUILD_TYPE Debug)
 add_executable(gameboy_emulator ${SOURCES})
