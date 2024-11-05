@@ -1,6 +1,6 @@
 #include "timer.h"
 
-void Timer::UpdateTimer(uint8_t cycles) {
+void Timer::UpdateTimer(uint8_t cycles) noexcept {
   tac_ = mmu_->ReadMemory(0xFF07);
   UpdateDIV(cycles);
   // Is the timer enabled?
@@ -9,7 +9,7 @@ void Timer::UpdateTimer(uint8_t cycles) {
   }
 }
 
-void Timer::UpdateDIV(uint8_t cycles) {
+void Timer::UpdateDIV(uint8_t cycles) noexcept {
   div_clock_ += cycles;
   while(div_clock_ >= 256) {
     ++div_;
@@ -17,7 +17,7 @@ void Timer::UpdateDIV(uint8_t cycles) {
   }
 }
 
-void Timer::UpdateTIMA(uint8_t cycles) {
+void Timer::UpdateTIMA(uint8_t cycles) noexcept {
   uint16_t clock_rate_ = frequencies_[tac_ & 0x03];
   tima_clock_ += cycles;
   if(tima_reset_pending_) {
