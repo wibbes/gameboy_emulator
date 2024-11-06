@@ -24,9 +24,9 @@ void CPU::SetBit(uint8_t &reg, uint8_t bit) { reg |= (0x01 << bit); }
 
 void CPU::ClearBit(uint8_t &reg, uint8_t bit) { reg &= ~(0x01 << bit); }
 
-void CPU::SetFlag(uint8_t flag) { *reg_af_->low_ |= (0x01 << flag); }
+void CPU::SetFlag(uint8_t flag) { *reg_af_.low_ |= (0x01 << flag); }
 
-void CPU::ClearFlag(uint8_t flag) { *reg_af_->low_ &= ~(0x01 << flag); }
+void CPU::ClearFlag(uint8_t flag) { *reg_af_.low_ &= ~(0x01 << flag); }
 
 void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
 
@@ -57,13 +57,13 @@ void CPU::JP() {
 }
 
 void CPU::JP(uint8_t condition) {
-  bool flag = condition & 0x10 ? GetFlag(flag_c_) : GetFlag(flag_z_);
+  bool flag = condition & 0x10 ? GetFlag(kFlagC) : GetFlag(kFlagZ);
   if (flag & condition) {
     JP();
   }
 }
 
-void CPU::JP_HL() { reg_pc_ = reg_hl_->GetRegister() - 1; }
+void CPU::JP_HL() { reg_pc_ = reg_hl_.GetRegister() - 1; }
 
 void CPU::JR() {
   reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
@@ -83,9 +83,9 @@ void CPU::CALL() {
 }
 
 void CPU::BIT(uint8_t reg, uint8_t bit) {
-  GetBit(reg, bit) == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  SetFlag(flag_h_);
+  GetBit(reg, bit) == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  SetFlag(kFlagH);
 }
 
 void CPU::SET(uint8_t &reg, uint8_t bit) { reg |= 1UL << bit; }
@@ -99,17 +99,17 @@ void CPU::INC(Register16 reg) {
 
 void CPU::INC(uint8_t &reg) {
   ++reg;
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  (reg & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  (reg & 0x0F) == 0 ? SetFlag(kFlagH) : ClearFlag(kFlagH);
 }
 
 void CPU::INC_HL() {
-  uint8_t value = mmu_->ReadMemory(reg_hl_->GetRegister()) + 1;
-  value == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  (value & 0x0F) == 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  mmu_->WriteMemory(reg_hl_->GetRegister(), value);
+  uint8_t value = mmu_->ReadMemory(reg_hl_.GetRegister()) + 1;
+  value == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  (value & 0x0F) == 0 ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  mmu_->WriteMemory(reg_hl_.GetRegister(), value);
 }
 
 void CPU::DEC(Register16 reg) {
@@ -119,145 +119,145 @@ void CPU::DEC(Register16 reg) {
 
 void CPU::DEC(uint8_t &reg) {
   --reg;
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  SetFlag(flag_n_);
-  (reg & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  SetFlag(kFlagN);
+  (reg & 0x0F) == 0x0F ? SetFlag(kFlagH) : ClearFlag(kFlagH);
 }
 
 void CPU::DEC_HL() {
-  uint8_t new_value = mmu_->ReadMemory(reg_hl_->GetRegister()) - 1;
-  mmu_->WriteMemory(reg_hl_->GetRegister(), new_value);
-  new_value == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  SetFlag(flag_n_);
-  (new_value & 0x0F) == 0x0F ? SetFlag(flag_h_) : ClearFlag(flag_h_);
+  uint8_t new_value = mmu_->ReadMemory(reg_hl_.GetRegister()) - 1;
+  mmu_->WriteMemory(reg_hl_.GetRegister(), new_value);
+  new_value == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  SetFlag(kFlagN);
+  (new_value & 0x0F) == 0x0F ? SetFlag(kFlagH) : ClearFlag(kFlagH);
 }
 
 void CPU::AND(uint8_t &reg) {
   reg_a_ &= reg;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  SetFlag(flag_h_);
-  ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  SetFlag(kFlagH);
+  ClearFlag(kFlagC);
 }
 
 void CPU::OR(uint8_t &reg) {
   reg_a_ |= reg;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_h_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagH);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagC);
 }
 
 void CPU::XOR(uint8_t &reg) {
   reg_a_ ^= reg;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_h_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagH);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagC);
 }
 
 void CPU::CP(uint8_t &reg) {
-  reg_a_ == reg ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  SetFlag(flag_n_);
-  ((reg_a_ - reg) & 0x0F) > (reg_a_ & 0x0F) ? SetFlag(flag_h_)
-                                            : ClearFlag(flag_h_);
-  reg_a_ < reg ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_a_ == reg ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  SetFlag(kFlagN);
+  ((reg_a_ - reg) & 0x0F) > (reg_a_ & 0x0F) ? SetFlag(kFlagH)
+                                            : ClearFlag(kFlagH);
+  reg_a_ < reg ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::RL(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_);
-  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  uint8_t carry = GetFlag(kFlagC);
+  (reg & 0x80) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   reg <<= 1;
   reg |= carry;
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::RR(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_);
-  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  uint8_t carry = GetFlag(kFlagC);
+  (reg & 0x01) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   reg >>= 1;
   carry ? reg |= 0x80 : reg |= 0;
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::RLC(uint8_t &reg) {
   uint8_t msb = (reg & 0x80) >> 7;
   reg = (reg << 1) | msb;
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
-  msb ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
+  msb ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::RRC(uint8_t &reg) {
   uint8_t lsb = reg & 0x01;
   reg = (reg >> 1) | (lsb << 7);
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
-  lsb ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
+  lsb ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::SLA(uint8_t &reg) {
-  (reg & 0x80) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  (reg & 0x80) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   reg <<= 1;
   ClearBit(reg, 0);
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::SRA(uint8_t &reg) {
-  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  (reg & 0x01) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   if ((reg & 0x80) != 0) {
     reg >>= 1;
     reg |= 0x80;
   } else {
     reg >>= 1;
   }
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::SRL(uint8_t &reg) {
-  (reg & 0x01) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  (reg & 0x01) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   reg >>= 1;
   ClearBit(reg, 7);
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::SWAP(uint8_t &reg) {
   reg = ((reg & 0x0F) << 4) | ((reg & 0xF0) >> 4);
-  reg == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
-  ClearFlag(flag_c_);
+  reg == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
+  ClearFlag(kFlagC);
 }
 
 void CPU::ADD(uint8_t &reg) {
   int eval = reg_a_ + reg;
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  ((test_carries & 0x100) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::ADD_HL(uint16_t value) {
-  int eval = reg_hl_->GetRegister() + value;
-  int test_carries = reg_hl_->GetRegister() ^ value ^ eval;
-  ClearFlag(flag_n_);
-  ((test_carries & 0x1000) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  ((test_carries & 0x10000) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
-  reg_hl_->SetRegister(eval);
+  int eval = reg_hl_.GetRegister() + value;
+  int test_carries = reg_hl_.GetRegister() ^ value ^ eval;
+  ClearFlag(kFlagN);
+  ((test_carries & 0x1000) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  ((test_carries & 0x10000) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
+  reg_hl_.SetRegister(eval);
 }
 
 void CPU::ADD_SP() {
@@ -265,81 +265,81 @@ void CPU::ADD_SP() {
   int eval = reg_sp_ + immediate;
   int test_carries = reg_sp_ ^ immediate ^ eval;
   reg_sp_ = eval;
-  ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  (test_carries & 0x10) != 0 ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  (test_carries & 0x100) != 0 ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  (test_carries & 0x10) != 0 ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  (test_carries & 0x100) != 0 ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::ADC(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_);
+  uint8_t carry = GetFlag(kFlagC);
   int eval = reg_a_ + (reg + carry);
   int test_carries = reg_a_ ^ reg ^ eval;
   reg_a_ = eval;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  ClearFlag(flag_n_);
-  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  ClearFlag(kFlagN);
+  ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  ((test_carries & 0x100) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::SUB(uint8_t &reg) {
   int eval = reg_a_ - reg;
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  SetFlag(flag_n_);
-  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  SetFlag(kFlagN);
+  ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  ((test_carries & 0x100) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::SBC(uint8_t &reg) {
-  uint8_t carry = GetFlag(flag_c_) ? 1 : 0;
+  uint8_t carry = GetFlag(kFlagC) ? 1 : 0;
   int eval = reg_a_ - (reg + carry);
   int16_t test_carries = static_cast<int16_t>(reg_a_ ^ reg ^ eval);
   reg_a_ = eval;
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
-  SetFlag(flag_n_);
-  ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-  ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
+  SetFlag(kFlagN);
+  ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+  ((test_carries & 0x100) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
 }
 
 void CPU::DAA() {
-  if (!GetFlag(flag_n_)) {
-    if (GetFlag(flag_c_) || reg_a_ > 0x99) {
+  if (!GetFlag(kFlagN)) {
+    if (GetFlag(kFlagC) || reg_a_ > 0x99) {
       reg_a_ += 0x60;
-      SetFlag(flag_c_);
+      SetFlag(kFlagC);
     }
-    if (GetFlag(flag_h_) || (reg_a_ & 0x0F) > 0x09) {
+    if (GetFlag(kFlagH) || (reg_a_ & 0x0F) > 0x09) {
       reg_a_ += 0x06;
     }
   } else {
-    if (GetFlag(flag_c_))
+    if (GetFlag(kFlagC))
       reg_a_ -= 0x60;
-    if (GetFlag(flag_h_))
+    if (GetFlag(kFlagH))
       reg_a_ -= 0x06;
   }
-  ClearFlag(flag_h_);
-  reg_a_ == 0 ? SetFlag(flag_z_) : ClearFlag(flag_z_);
+  ClearFlag(kFlagH);
+  reg_a_ == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
 }
 
 void CPU::CPL() {
   reg_a_ = ~reg_a_;
-  SetFlag(flag_n_);
-  SetFlag(flag_h_);
+  SetFlag(kFlagN);
+  SetFlag(kFlagH);
 }
 
 void CPU::NOP() { return; }
 
 void CPU::CCF() {
-  reg_f_ ^= (0x01 << flag_c_);
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
+  reg_f_ ^= (0x01 << kFlagC);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
 }
 
 void CPU::SCF() {
-  ClearFlag(flag_n_);
-  ClearFlag(flag_h_);
-  SetFlag(flag_c_);
+  ClearFlag(kFlagN);
+  ClearFlag(kFlagH);
+  SetFlag(kFlagC);
 }
 
 void CPU::DI() { ime_ = false; }
@@ -428,14 +428,14 @@ void CPU::Execute(Instruction instruction) {
     NOP();
     break;
   case 0x01:
-    LD(*reg_bc_,
+    LD(reg_bc_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0x02: // LD (BC), A
-    mmu_->WriteMemory(reg_bc_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_bc_.GetRegister(), reg_a_);
     break;
   case 0x03:
-    INC(*reg_bc_);
+    INC(reg_bc_);
     break;
   case 0x04:
     INC(reg_b_);
@@ -448,7 +448,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x07:
     RLC(reg_a_);
-    ClearFlag(flag_z_);
+    ClearFlag(kFlagZ);
     break;
   case 0x08: // LD (a16), SP
     mmu_->WriteMemory(
@@ -460,13 +460,13 @@ void CPU::Execute(Instruction instruction) {
         (reg_sp_ & 0xFF00) >> 8);
     break;
   case 0x09:
-    ADD_HL(reg_bc_->GetRegister());
+    ADD_HL(reg_bc_.GetRegister());
     break;
   case 0x0A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_bc_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_bc_.GetRegister()));
     break;
   case 0x0B:
-    DEC(*reg_bc_);
+    DEC(reg_bc_);
     break;
   case 0x0C:
     INC(reg_c_);
@@ -479,20 +479,20 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x0F:
     RRC(reg_a_);
-    ClearFlag(flag_z_);
+    ClearFlag(kFlagZ);
     break;
   case 0x10:
     STOP();
     break;
   case 0x11:
-    LD(*reg_de_,
+    LD(reg_de_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0x12:
-    mmu_->WriteMemory(reg_de_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_de_.GetRegister(), reg_a_);
     break;
   case 0x13:
-    INC(*reg_de_);
+    INC(reg_de_);
     break;
   case 0x14:
     INC(reg_d_);
@@ -505,19 +505,19 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x17:
     RL(reg_a_);
-    ClearFlag(flag_z_);
+    ClearFlag(kFlagZ);
     break;
   case 0x18:
     JR();
     break;
   case 0x19:
-    ADD_HL(reg_de_->GetRegister());
+    ADD_HL(reg_de_.GetRegister());
     break;
   case 0x1A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_de_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_de_.GetRegister()));
     break;
   case 0x1B:
-    DEC(*reg_de_);
+    DEC(reg_de_);
     break;
   case 0x1C:
     INC(reg_e_);
@@ -531,25 +531,25 @@ void CPU::Execute(Instruction instruction) {
   case 0x1F:
     RR(reg_a_);
     // RR, A and RRA are two different opcodes. 0x1F resets Z.
-    ClearFlag(flag_z_);
+    ClearFlag(kFlagZ);
     break;
   case 0x20:
-    if (!GetFlag(flag_z_)) {
+    if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JR();
     }
     break;
   case 0x21:
-    LD(*reg_hl_,
+    LD(reg_hl_,
        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
 
     break;
   case 0x22:
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
-    reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
+    reg_hl_.SetRegister(reg_hl_.GetRegister() + 1);
     break;
   case 0x23:
-    INC(*reg_hl_);
+    INC(reg_hl_);
     break;
   case 0x24:
     INC(reg_h_);
@@ -564,20 +564,20 @@ void CPU::Execute(Instruction instruction) {
     DAA();
     break;
   case 0x28:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JR();
     }
     break;
   case 0x29:
-    ADD_HL(reg_hl_->GetRegister());
+    ADD_HL(reg_hl_.GetRegister());
     break;
   case 0x2A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
-    reg_hl_->SetRegister(reg_hl_->GetRegister() + 1);
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    reg_hl_.SetRegister(reg_hl_.GetRegister() + 1);
     break;
   case 0x2B:
-    DEC(*reg_hl_);
+    DEC(reg_hl_);
     break;
   case 0x2C:
     INC(reg_l_);
@@ -592,7 +592,7 @@ void CPU::Execute(Instruction instruction) {
     CPL();
     break;
   case 0x30:
-    if (!GetFlag(flag_c_)) {
+    if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JR();
     }
@@ -602,8 +602,8 @@ void CPU::Execute(Instruction instruction) {
         MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x32:
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
-    reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
+    reg_hl_.SetRegister(reg_hl_.GetRegister() - 1);
     break;
   case 0x33:
     ++reg_sp_;
@@ -615,13 +615,13 @@ void CPU::Execute(Instruction instruction) {
     DEC_HL();
     break;
   case 0x36:
-    mmu_->WriteMemory(reg_hl_->GetRegister(), mmu_->ReadMemory(reg_pc_ + 1));
+    mmu_->WriteMemory(reg_hl_.GetRegister(), mmu_->ReadMemory(reg_pc_ + 1));
     break;
   case 0x37:
     SCF();
     break;
   case 0x38:
-    if (GetFlag(flag_c_)) {
+    if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JR();
     }
@@ -630,8 +630,8 @@ void CPU::Execute(Instruction instruction) {
     ADD_HL(reg_sp_);
     break;
   case 0x3A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
-    reg_hl_->SetRegister(reg_hl_->GetRegister() - 1);
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    reg_hl_.SetRegister(reg_hl_.GetRegister() - 1);
     break;
   case 0x3B:
     --reg_sp_;
@@ -667,7 +667,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_b_, reg_l_);
     break;
   case 0x46: // LD B, (HL)
-    LD(&reg_b_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_b_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x47: // LD B, A
     LD(&reg_b_, reg_a_);
@@ -691,7 +691,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_c_, reg_l_);
     break;
   case 0x4E: // LD C, (HL)
-    LD(&reg_c_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_c_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x4F: // LD C, A
     LD(&reg_c_, reg_a_);
@@ -715,7 +715,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_d_, reg_l_);
     break;
   case 0x56: // LD D, (HL)
-    LD(&reg_d_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_d_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x57: // LD D, A
     LD(&reg_d_, reg_a_);
@@ -739,7 +739,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_e_, reg_l_);
     break;
   case 0x5E: // LD E, (HL)
-    LD(&reg_e_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_e_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x5F: // LD E, A
     LD(&reg_e_, reg_a_);
@@ -763,7 +763,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_h_, reg_l_);
     break;
   case 0x66: // LD H, (HL)
-    LD(&reg_h_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_h_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x67: // LD H, A
     LD(&reg_h_, reg_a_);
@@ -787,34 +787,34 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_l_, reg_l_);
     break;
   case 0x6E: // LD L, (HL)
-    LD(&reg_l_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_l_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x6F: // LD L, A
     LD(&reg_l_, reg_a_);
     break;
   case 0x70: // LD (HL), B
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_b_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_b_);
     break;
   case 0x71: // LD (HL), C
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_c_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_c_);
     break;
   case 0x72: // LD (HL), D
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_d_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_d_);
     break;
   case 0x73: // LD (HL), E
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_e_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_e_);
     break;
   case 0x74: // LD (HL), H
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_h_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_h_);
     break;
   case 0x75: // LD (HL), L
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_l_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_l_);
     break;
   case 0x76:
     HALT();
     break;
   case 0x77: // LD (HL), A
-    mmu_->WriteMemory(reg_hl_->GetRegister(), reg_a_);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
     break;
   case 0x78: // LD A, B
     LD(&reg_a_, reg_b_);
@@ -835,7 +835,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_a_, reg_l_);
     break;
   case 0x7E: // LD A, (HL)
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_->GetRegister()));
+    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
     break;
   case 0x7F: // LD A, A
     LD(&reg_a_, reg_a_);
@@ -859,7 +859,7 @@ void CPU::Execute(Instruction instruction) {
     ADD(reg_l_);
     break;
   case 0x86: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     ADD(byte);
     break;
   }
@@ -885,7 +885,7 @@ void CPU::Execute(Instruction instruction) {
     ADC(reg_l_);
     break;
   case 0x8E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     ADC(byte);
     break;
   }
@@ -911,7 +911,7 @@ void CPU::Execute(Instruction instruction) {
     SUB(reg_l_);
     break;
   case 0x96: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SUB(byte);
     break;
   }
@@ -937,7 +937,7 @@ void CPU::Execute(Instruction instruction) {
     SBC(reg_l_);
     break;
   case 0x9E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SBC(byte);
     break;
   }
@@ -963,7 +963,7 @@ void CPU::Execute(Instruction instruction) {
     AND(reg_l_);
     break;
   case 0xA6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     AND(byte);
     break;
   }
@@ -989,7 +989,7 @@ void CPU::Execute(Instruction instruction) {
     XOR(reg_l_);
     break;
   case 0xAE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     XOR(byte);
     break;
   }
@@ -1015,7 +1015,7 @@ void CPU::Execute(Instruction instruction) {
     OR(reg_l_);
     break;
   case 0xB6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     OR(byte);
     break;
   }
@@ -1041,7 +1041,7 @@ void CPU::Execute(Instruction instruction) {
     CP(reg_l_);
     break;
   case 0xBE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     CP(byte);
     break;
   }
@@ -1049,16 +1049,16 @@ void CPU::Execute(Instruction instruction) {
     CP(reg_a_);
     break;
   case 0xC0:
-    if (!GetFlag(flag_z_)) {
+    if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 3;
       RET();
     }
     break;
   case 0xC1:
-    POP(*reg_bc_);
+    POP(reg_bc_);
     break;
   case 0xC2:
-    if (!GetFlag(flag_z_)) {
+    if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JP();
     }
@@ -1067,13 +1067,13 @@ void CPU::Execute(Instruction instruction) {
     JP();
     break;
   case 0xC4:
-    if (!GetFlag(flag_z_)) {
+    if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 3;
       CALL();
     }
     break;
   case 0xC5:
-    PUSH(reg_bc_->GetRegister());
+    PUSH(reg_bc_.GetRegister());
     break;
   case 0xC6: {
     uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
@@ -1081,10 +1081,10 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xC7:
-    RST(rst_jump_vectors[0]);
+    RST(rst_jump_vectors_[0]);
     break;
   case 0xC8:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(kFlagZ)) {
       RET();
     }
     break;
@@ -1092,7 +1092,7 @@ void CPU::Execute(Instruction instruction) {
     RET();
     break;
   case 0xCA:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JP();
     }
@@ -1101,7 +1101,7 @@ void CPU::Execute(Instruction instruction) {
     ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0xCC:
-    if (GetFlag(flag_z_)) {
+    if (GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 3;
       CALL();
     }
@@ -1115,19 +1115,19 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xCF:
-    RST(rst_jump_vectors[1]);
+    RST(rst_jump_vectors_[1]);
     break;
   case 0xD0:
-    if (!GetFlag(flag_c_)) {
+    if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       RET();
     }
     break;
   case 0xD1:
-    POP(*reg_de_);
+    POP(reg_de_);
     break;
   case 0xD2:
-    if (!GetFlag(flag_c_)) {
+    if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JP();
     }
@@ -1135,13 +1135,13 @@ void CPU::Execute(Instruction instruction) {
   case 0xD3:
     break;
   case 0xD4:
-    if (!GetFlag(flag_c_)) {
+    if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       CALL();
     }
     break;
   case 0xD5:
-    PUSH(reg_de_->GetRegister());
+    PUSH(reg_de_.GetRegister());
     break;
   case 0xD6: {
     uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
@@ -1149,10 +1149,10 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xD7:
-    RST(rst_jump_vectors[2]);
+    RST(rst_jump_vectors_[2]);
     break;
   case 0xD8:
-    if (GetFlag(flag_c_)) {
+    if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       RET();
     }
@@ -1162,7 +1162,7 @@ void CPU::Execute(Instruction instruction) {
     ime_ = true;
     break;
   case 0xDA:
-    if (GetFlag(flag_c_)) {
+    if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JP();
     }
@@ -1170,7 +1170,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xDB:
     break;
   case 0xDC:
-    if (GetFlag(flag_c_)) {
+    if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       CALL();
     }
@@ -1183,7 +1183,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   } break;
   case 0xDF:
-    RST(rst_jump_vectors[3]);
+    RST(rst_jump_vectors_[3]);
     break;
   case 0xE0: {
     uint16_t word =
@@ -1192,7 +1192,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xE1:
-    POP(*reg_hl_);
+    POP(reg_hl_);
     break;
   case 0xE2:
     // MSB == 0xFF, so the possible range is 0xFF00 - 0xFFFF
@@ -1203,7 +1203,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xE4:
     break;
   case 0xE5:
-    PUSH(reg_hl_->GetRegister());
+    PUSH(reg_hl_.GetRegister());
     break;
   case 0xE6: {
     uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
@@ -1211,7 +1211,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xE7:
-    RST(rst_jump_vectors[4]);
+    RST(rst_jump_vectors_[4]);
     break;
   case 0xE8:
     ADD_SP();
@@ -1237,7 +1237,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xEF:
-    RST(rst_jump_vectors[5]);
+    RST(rst_jump_vectors_[5]);
     break;
   case 0xF0:
     if (mmu_->ReadMemory(reg_pc_ + 1) == 0x44) {
@@ -1249,8 +1249,8 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0xF1:
-    POP(*reg_af_);
-    *reg_af_->low_ &= 0xF0; // don't modify flags register
+    POP(reg_af_);
+    *reg_af_.low_ &= 0xF0; // don't modify flags register
     break;
   case 0xF2:
     LD(&reg_a_, mmu_->ReadMemory(MakeWord(0xFF, reg_c_)));
@@ -1261,7 +1261,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xF4:
     break;
   case 0xF5:
-    PUSH(reg_af_->GetRegister());
+    PUSH(reg_af_.GetRegister());
     break;
   case 0xF6: {
     uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
@@ -1269,21 +1269,21 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xF7:
-    RST(rst_jump_vectors[6]);
+    RST(rst_jump_vectors_[6]);
     break;
   case 0xF8: {
     int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
     int eval = reg_sp_ + immediate;
     int test_carries = reg_sp_ ^ immediate ^ eval;
-    reg_hl_->SetRegister(immediate + reg_sp_);
-    ClearFlag(flag_z_);
-    ClearFlag(flag_n_);
-    ((test_carries & 0x10) != 0) ? SetFlag(flag_h_) : ClearFlag(flag_h_);
-    ((test_carries & 0x100) != 0) ? SetFlag(flag_c_) : ClearFlag(flag_c_);
+    reg_hl_.SetRegister(immediate + reg_sp_);
+    ClearFlag(kFlagZ);
+    ClearFlag(kFlagN);
+    ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
+    ((test_carries & 0x100) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
     break;
   }
   case 0xF9:
-    reg_sp_ = reg_hl_->GetRegister();
+    reg_sp_ = reg_hl_.GetRegister();
     break;
   case 0xFA: {
     uint8_t byte = mmu_->ReadMemory(
@@ -1304,7 +1304,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   }
   case 0xFF:
-    RST(rst_jump_vectors[7]);
+    RST(rst_jump_vectors_[7]);
     break;
   default:
     break;
@@ -1333,9 +1333,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RLC(reg_l_);
     break;
   case 0x06: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RLC(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x07:
@@ -1360,9 +1360,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RRC(reg_l_);
     break;
   case 0x0E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RRC(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x0F:
@@ -1387,9 +1387,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RL(reg_l_);
     break;
   case 0x16: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RL(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x17:
@@ -1414,9 +1414,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RR(reg_l_);
     break;
   case 0x1E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RR(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x1F:
@@ -1441,9 +1441,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SLA(reg_l_);
     break;
   case 0x26: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SLA(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x27:
@@ -1468,9 +1468,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SRA(reg_l_);
     break;
   case 0x2E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SRA(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x2F:
@@ -1495,9 +1495,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SWAP(reg_l_);
     break;
   case 0x36: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SWAP(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x37:
@@ -1522,9 +1522,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SRL(reg_l_);
     break;
   case 0x3E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SRL(byte);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x3F:
@@ -1549,9 +1549,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 0);
     break;
   case 0x46: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 0);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x47:
@@ -1576,9 +1576,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 1);
     break;
   case 0x4E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 1);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x4F:
@@ -1603,9 +1603,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 2);
     break;
   case 0x56: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 2);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x57:
@@ -1630,9 +1630,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 3);
     break;
   case 0x5E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 3);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x5F:
@@ -1657,9 +1657,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 4);
     break;
   case 0x66: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 4);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x67:
@@ -1684,9 +1684,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 5);
     break;
   case 0x6E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 5);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x6F:
@@ -1711,9 +1711,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 6);
     break;
   case 0x76: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 6);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x77:
@@ -1738,9 +1738,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 7);
     break;
   case 0x7E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     BIT(byte, 7);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x7F:
@@ -1765,9 +1765,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 0);
     break;
   case 0x86: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 0);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x87:
@@ -1792,9 +1792,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 1);
     break;
   case 0x8E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 1);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x8F:
@@ -1819,9 +1819,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 2);
     break;
   case 0x96: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 2);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x97:
@@ -1846,9 +1846,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 3);
     break;
   case 0x9E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 3);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x9F:
@@ -1873,9 +1873,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 4);
     break;
   case 0xA6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 4);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xA7:
@@ -1900,9 +1900,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 5);
     break;
   case 0xAE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 5);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xAF:
@@ -1927,9 +1927,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 6);
     break;
   case 0xB6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 6);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xB7:
@@ -1954,9 +1954,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 7);
     break;
   case 0xBE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     RES(byte, 7);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xBF:
@@ -1981,9 +1981,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 0);
     break;
   case 0xC6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 0);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xC7:
@@ -2008,9 +2008,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 1);
     break;
   case 0xCE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 1);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xCF:
@@ -2035,9 +2035,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 2);
     break;
   case 0xD6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 2);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xD7:
@@ -2062,9 +2062,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 3);
     break;
   case 0xDE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 3);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xDF:
@@ -2089,9 +2089,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 4);
     break;
   case 0xE6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 4);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xE7:
@@ -2116,9 +2116,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 5);
     break;
   case 0xEE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 5);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xEF:
@@ -2143,9 +2143,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 6);
     break;
   case 0xF6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 6);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xF7:
@@ -2170,9 +2170,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 7);
     break;
   case 0xFE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_->GetRegister());
+    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
     SET(byte, 7);
-    mmu_->WriteMemory(reg_hl_->GetRegister(), byte);
+    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xFF:

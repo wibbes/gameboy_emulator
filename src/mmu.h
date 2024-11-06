@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+#include "cartridge.h"
+
 class InterruptRegister {
 public:
   InterruptRegister() : state_(0x0b11111) {};
@@ -26,8 +28,8 @@ class MMU {
 public:
   std::vector<uint8_t> memory_;
   std::unique_ptr<InterruptRegister> ie_, if_;
-  MMU(std::vector<uint8_t> *cart)
-      : memory_(*cart), ie_(std::make_unique<InterruptRegister>()),
+  MMU(std::shared_ptr<Cartridge> cart)
+      : memory_(cart->data), ie_(std::make_unique<InterruptRegister>()),
         if_(std::make_unique<InterruptRegister>()) {}
   ~MMU() = default;
 
