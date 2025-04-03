@@ -25,25 +25,31 @@ uint8_t InterruptRegister::GetInterrupt(uint8_t interrupt) {
 
 void MMU::WriteMemory(uint16_t address, uint8_t value) {
   switch (address) {
-  // Serial
-  case 0xFF01:
+  case 0xFF01: // serial
     std::cout << std::hex << value;
     break;
-  // DIV
-  case 0xFF04:
+  case 0xFF04: // DIV
     memory_[0xFF04] = 0x00;
+    timer_->Write(0xFF04, 0x00);
     break;
-  // TAC
-  case 0xFF07:
+  case 0xFF05: // TIMA
+    memory_[0xFF05] = value;
+    timer_->Write(0xFF05, value);
+    break;
+  case 0xFF06: // TMA
+    memory_[0xFF06] = value;
+    timer_->Write(0xFF06, value);
+    break;
+  case 0xFF07: // TAC
     memory_[0xFF07] = value;
+    std::cout << memory_[0xFf07] << '\n';
+    timer_->Write(0xFF07, value);
     break;
-  // Interrupt Flags
-  case 0xFF0F:
+  case 0xFF0F: // interrupt flags
     if_->SetState(value);
     memory_[0xFF0F] = value;
     break;
-  // Interrupt Enable
-  case 0xFFFF:
+  case 0xFFFF: // interrupt flags
     ie_->SetState(value);
     memory_[0xFFFF] = value;
     break;
@@ -55,6 +61,18 @@ void MMU::WriteMemory(uint16_t address, uint8_t value) {
 
 uint8_t MMU::ReadMemory(uint16_t address) {
   switch (address) {
+  case 0xFF04: // DIV 
+    return timer_->Read(0xFF04);
+    break;
+  case 0xFF05: // TIMA   
+    return timer_->Read(0xFF05);
+    break;
+  case 0xFF06: // TMA
+    return timer_->Read(0xFF06);
+    break;
+  case 0xFF07: // TAC
+    return timer_->Read(0xFF07);
+    break;
   case 0xFF0F: // interrupt flags
     return if_->GetState();
   case 0xFFFF: // interrupt enable

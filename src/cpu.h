@@ -26,25 +26,35 @@ public:
   explicit CPU(std::shared_ptr<Cartridge> cartridge)
       : reg_a_(0x01), reg_b_(0x0), reg_c_(0x13), reg_d_(0x0), reg_e_(0xD8),
         reg_f_(0xB0), reg_h_(0x01), reg_l_(0x4D), conditional_m_cycles_(0x0),
-        reg_sp_(0xFFFE), reg_pc_(0x0100), reg_af_(Register16(&reg_a_, &reg_f_)),
+        cycles_elapsed_(0x00), reg_sp_(0xFFFE), reg_pc_(0x0100),
+        reg_af_(Register16(&reg_a_, &reg_f_)),
         reg_bc_(Register16(&reg_b_, &reg_c_)),
         reg_de_(Register16(&reg_d_, &reg_e_)),
         reg_hl_(Register16(&reg_h_, &reg_l_)),
-        mmu_(std::make_shared<MMU>(cartridge)),
-        timer_(std::make_unique<Timer>(mmu_)), ime_(false), halted_(false),
-        ime_enable_pending_(false) {}
+        timer_(std::make_shared<Timer>()),
+        mmu_(std::make_shared<MMU>(cartridge, timer_)), ime_(false),
+        halted_(false), halt_bug_(false), ime_enable_pending_(false) {}
   ~CPU() = default;
 
   void Run();
+  void Step();
+  void Tick();
+  void TickMCycle();
+  void CheckInterrupts();
+  bool CheckHalt();
+  bool CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction);
+  void CheckEI(uint8_t opcode);
+  void WriteMMU(uint16_t address, uint8_t value);
+  uint8_t ReadMMU(uint16_t address);
 
 private:
   uint8_t reg_a_, reg_b_, reg_c_, reg_d_, reg_e_, reg_f_, reg_h_, reg_l_,
-      conditional_m_cycles_;
+      conditional_m_cycles_, cycles_elapsed_;
   uint16_t reg_sp_, reg_pc_;
-  bool ime_, halted_, ime_enable_pending_;
+  bool ime_, halted_, halt_bug_, ime_enable_pending_;
 
+  std::shared_ptr<Timer> timer_;
   std::shared_ptr<MMU> mmu_;
-  std::unique_ptr<Timer> timer_;
   Register16 reg_af_, reg_bc_, reg_de_, reg_hl_;
 
   static constexpr uint8_t kFlagZ = 0x07;

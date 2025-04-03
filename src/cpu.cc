@@ -33,14 +33,13 @@ void CPU::LD(Register16 reg, uint16_t value) { reg.SetRegister(value); }
 void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
 
 void CPU::PUSH(uint16_t value) {
-  mmu_->WriteMemory(reg_sp_ - 1, static_cast<uint8_t>((value >> 8) & 0xFF));
-  mmu_->WriteMemory(reg_sp_ - 2, static_cast<uint8_t>(value & 0xFF));
+  WriteMMU(reg_sp_ - 1, static_cast<uint8_t>((value >> 8) & 0xFF));
+  WriteMMU(reg_sp_ - 2, static_cast<uint8_t>(value & 0xFF));
   reg_sp_ -= 2;
 }
 
 void CPU::POP(Register16 reg) {
-  reg.SetRegister(
-      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)));
+  reg.SetRegister(MakeWord(ReadMMU(reg_sp_ + 1), ReadMMU(reg_sp_)));
   reg_sp_ += 2;
 }
 
@@ -51,8 +50,7 @@ void CPU::RST(uint8_t jmp_vector) {
 }
 
 void CPU::JP() {
-  reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+  reg_pc_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1));
   reg_pc_ -= 3;
 }
 
@@ -65,21 +63,16 @@ void CPU::JP(uint8_t condition) {
 
 void CPU::JP_HL() { reg_pc_ = reg_hl_.GetRegister() - 1; }
 
-void CPU::JR() {
-  reg_pc_ += static_cast<int8_t>(mmu_->ReadMemory(reg_pc_ + 1));
-}
+void CPU::JR() { reg_pc_ += static_cast<int8_t>(ReadMMU(reg_pc_ + 1)); }
 
 void CPU::RET() {
-  reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_sp_ + 1), mmu_->ReadMemory(reg_sp_)) - 1;
+  reg_pc_ = MakeWord(ReadMMU(reg_sp_ + 1), ReadMMU(reg_sp_)) - 1;
   reg_sp_ += 2;
 }
 
 void CPU::CALL() {
   PUSH(reg_pc_ + 3);
-  reg_pc_ =
-      MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) -
-      3;
+  reg_pc_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)) - 3;
 }
 
 void CPU::BIT(uint8_t reg, uint8_t bit) {
@@ -105,11 +98,11 @@ void CPU::INC(uint8_t &reg) {
 }
 
 void CPU::INC_HL() {
-  uint8_t value = mmu_->ReadMemory(reg_hl_.GetRegister()) + 1;
+  uint8_t value = ReadMMU(reg_hl_.GetRegister()) + 1;
   value == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
   ClearFlag(kFlagN);
   (value & 0x0F) == 0 ? SetFlag(kFlagH) : ClearFlag(kFlagH);
-  mmu_->WriteMemory(reg_hl_.GetRegister(), value);
+  WriteMMU(reg_hl_.GetRegister(), value);
 }
 
 void CPU::DEC(Register16 reg) {
@@ -125,8 +118,8 @@ void CPU::DEC(uint8_t &reg) {
 }
 
 void CPU::DEC_HL() {
-  uint8_t new_value = mmu_->ReadMemory(reg_hl_.GetRegister()) - 1;
-  mmu_->WriteMemory(reg_hl_.GetRegister(), new_value);
+  uint8_t new_value = ReadMMU(reg_hl_.GetRegister()) - 1;
+  WriteMMU(reg_hl_.GetRegister(), new_value);
   new_value == 0 ? SetFlag(kFlagZ) : ClearFlag(kFlagZ);
   SetFlag(kFlagN);
   (new_value & 0x0F) == 0x0F ? SetFlag(kFlagH) : ClearFlag(kFlagH);
@@ -261,7 +254,7 @@ void CPU::ADD_HL(uint16_t value) {
 }
 
 void CPU::ADD_SP() {
-  int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
+  int immediate = static_cast<char>(ReadMMU(reg_pc_ + 1));
   int eval = reg_sp_ + immediate;
   int test_carries = reg_sp_ ^ immediate ^ eval;
   reg_sp_ = eval;
@@ -346,7 +339,16 @@ void CPU::DI() { ime_ = false; }
 
 void CPU::EI() { ime_ = true; }
 
-void CPU::HALT() { halted_ = true; }
+void CPU::HALT() {
+  uint8_t pending = mmu_->ie_->GetState() & mmu_->if_->GetState();
+
+  if (!ime_ && pending) {
+    halt_bug_ = true; // HALT bug
+  } else {
+    halted_ = true; // Normal HALT
+  }
+  // halted_ = true;
+}
 
 void CPU::STOP() {
   // Before calling this...
@@ -354,12 +356,7 @@ void CPU::STOP() {
   //  - reset I/O
 }
 
-void CPU::Run() { Fetch(); }
-
-void CPU::Fetch() { Decode(mmu_->ReadMemory(reg_pc_)); }
-
-void CPU::Decode(uint8_t opcode) {
-  // Check if any interrupts need to be serviced.
+void CPU::CheckInterrupts() {
   if (ime_ &&
       (mmu_->ie_->GetState() & mmu_->if_->GetState())) { // Interrupts pending
     ime_ = false;
@@ -372,37 +369,75 @@ void CPU::Decode(uint8_t opcode) {
       }
     }
   }
+}
 
-  // Loop HALT until interrupt is triggered
+void CPU::WriteMMU(uint16_t address, uint8_t value) {
+  TickMCycle();
+  mmu_->WriteMemory(address, value);
+}
+
+uint8_t CPU::ReadMMU(uint16_t address) {
+  TickMCycle();
+  return mmu_->ReadMemory(address);
+}
+
+void CPU::TickMCycle() {
+  Tick();
+  Tick();
+  Tick();
+  Tick();
+  ++cycles_elapsed_;
+}
+
+bool CPU::CheckHalt() {
+  bool interrupt_pending = mmu_->ie_->GetState() & mmu_->if_->GetState();
+  if (interrupt_pending) {
+    halted_ = false;
+    return false;
+  }
   if (halted_) {
-    if (mmu_->ie_->GetState() & mmu_->if_->GetState()) {
-      halted_ = false;
-    }
-    // If still halted
-    if (halted_) {
-      // Sent as t-states
-      timer_->UpdateTimer(4);
-      // Skip execution
-      return;
-    }
+    TickMCycle();
+    return true;
+  } else {
+    return false;
   }
+}
 
-  Execute(instructions.at(opcode));
-
-  uint8_t t_cycles = instructions.at(opcode).cycles_;
-
-  // Check instructions which have variable cycle counts depending on outcome
-  if (conditional_m_cycles_ != 0) {
-    t_cycles += conditional_m_cycles_;
-    conditional_m_cycles_ = 0;
-  }
-  timer_->UpdateTimer(t_cycles * 4);
-  // EI enabling. Needs to be done after the next instruction cycle.
+void CPU::CheckEI(uint8_t opcode) {
   if (opcode != 0xFB && ime_enable_pending_) {
     EI();
     ime_enable_pending_ = false;
   }
 }
+
+bool CPU::CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction) {
+  if (cycles_for_instruction == cycles_elapsed_) {
+    return true;
+  } else {
+    std::cout << "WRONG CYCLES FOR 0x" << std::hex << +opcode << " "
+              << instructions.at(opcode).mnemonic_ << "\nEXPECTED "
+              << +cycles_for_instruction << ", RAN " << +cycles_elapsed_
+              << '\n';
+    return false;
+  }
+  return true;
+}
+
+void CPU::Run() { Step(); }
+
+void CPU::Step() {
+  CheckInterrupts();
+  if (CheckHalt())
+    return;
+  uint8_t opcode = mmu_->ReadMemory(reg_pc_);
+  TickMCycle();
+  Execute(instructions.at(opcode));
+  CheckEI(opcode);
+  if (!CheckCycles(opcode, instructions.at(opcode).cycles_))
+    exit(1);
+}
+
+void CPU::Tick() { timer_->Tick(); }
 
 void CPU::HandleInterrupt(uint8_t interrupt) {
   mmu_->if_->ResetInterrupt(interrupt);
@@ -410,16 +445,19 @@ void CPU::HandleInterrupt(uint8_t interrupt) {
   reg_pc_ = interrupt_vectors_[interrupt];
   // Run the ISR until RETI is found
   while (true) {
-    uint8_t opcode = mmu_->ReadMemory(reg_pc_);
+    uint8_t opcode = ReadMMU(reg_pc_);
     Execute(instructions.at(opcode));
     // PC increments within Execute, so this checks next PC value for
     // RET or RETI opcodes then runs it.
-    opcode = mmu_->ReadMemory(reg_pc_);
+    opcode = ReadMMU(reg_pc_);
     if (opcode == 0xC9 || opcode == 0xD9) {
       Execute(instructions.at(opcode));
       break;
     }
   }
+  // TickMCycle();
+  // TickMCycle();
+  // TickMCycle();
 }
 
 void CPU::Execute(Instruction instruction) {
@@ -428,11 +466,10 @@ void CPU::Execute(Instruction instruction) {
     NOP();
     break;
   case 0x01:
-    LD(reg_bc_,
-       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+    LD(reg_bc_, MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
     break;
   case 0x02: // LD (BC), A
-    mmu_->WriteMemory(reg_bc_.GetRegister(), reg_a_);
+    WriteMMU(reg_bc_.GetRegister(), reg_a_);
     break;
   case 0x03:
     INC(reg_bc_);
@@ -444,26 +481,23 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_b_);
     break;
   case 0x06: // LD B, d8
-    LD(&reg_b_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_b_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x07:
     RLC(reg_a_);
     ClearFlag(kFlagZ);
     break;
   case 0x08: // LD (a16), SP
-    mmu_->WriteMemory(
-        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)),
-        reg_sp_ & 0xFF);
-    mmu_->WriteMemory(
-        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)) +
-            1,
-        (reg_sp_ & 0xFF00) >> 8);
+    WriteMMU(MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)),
+             reg_sp_ & 0xFF);
+    WriteMMU(MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)) + 1,
+             (reg_sp_ & 0xFF00) >> 8);
     break;
   case 0x09:
     ADD_HL(reg_bc_.GetRegister());
     break;
   case 0x0A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_bc_.GetRegister()));
+    LD(&reg_a_, ReadMMU(reg_bc_.GetRegister()));
     break;
   case 0x0B:
     DEC(reg_bc_);
@@ -475,7 +509,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_c_);
     break;
   case 0x0E:
-    LD(&reg_c_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_c_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x0F:
     RRC(reg_a_);
@@ -485,11 +519,10 @@ void CPU::Execute(Instruction instruction) {
     STOP();
     break;
   case 0x11:
-    LD(reg_de_,
-       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+    LD(reg_de_, MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
     break;
   case 0x12:
-    mmu_->WriteMemory(reg_de_.GetRegister(), reg_a_);
+    WriteMMU(reg_de_.GetRegister(), reg_a_);
     break;
   case 0x13:
     INC(reg_de_);
@@ -501,7 +534,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_d_);
     break;
   case 0x16:
-    LD(&reg_d_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_d_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x17:
     RL(reg_a_);
@@ -514,7 +547,7 @@ void CPU::Execute(Instruction instruction) {
     ADD_HL(reg_de_.GetRegister());
     break;
   case 0x1A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_de_.GetRegister()));
+    LD(&reg_a_, ReadMMU(reg_de_.GetRegister()));
     break;
   case 0x1B:
     DEC(reg_de_);
@@ -526,7 +559,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_e_);
     break;
   case 0x1E:
-    LD(&reg_e_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_e_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x1F:
     RR(reg_a_);
@@ -540,12 +573,11 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0x21:
-    LD(reg_hl_,
-       MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+    LD(reg_hl_, MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
 
     break;
   case 0x22:
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
+    WriteMMU(reg_hl_.GetRegister(), reg_a_);
     reg_hl_.SetRegister(reg_hl_.GetRegister() + 1);
     break;
   case 0x23:
@@ -558,7 +590,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_h_);
     break;
   case 0x26:
-    LD(&reg_h_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_h_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x27:
     DAA();
@@ -573,7 +605,7 @@ void CPU::Execute(Instruction instruction) {
     ADD_HL(reg_hl_.GetRegister());
     break;
   case 0x2A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_a_, ReadMMU(reg_hl_.GetRegister()));
     reg_hl_.SetRegister(reg_hl_.GetRegister() + 1);
     break;
   case 0x2B:
@@ -586,7 +618,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_l_);
     break;
   case 0x2E:
-    LD(&reg_l_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_l_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x2F:
     CPL();
@@ -598,11 +630,10 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0x31:
-    reg_sp_ =
-        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
+    reg_sp_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1));
     break;
   case 0x32:
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
+    WriteMMU(reg_hl_.GetRegister(), reg_a_);
     reg_hl_.SetRegister(reg_hl_.GetRegister() - 1);
     break;
   case 0x33:
@@ -615,7 +646,7 @@ void CPU::Execute(Instruction instruction) {
     DEC_HL();
     break;
   case 0x36:
-    mmu_->WriteMemory(reg_hl_.GetRegister(), mmu_->ReadMemory(reg_pc_ + 1));
+    WriteMMU(reg_hl_.GetRegister(), ReadMMU(reg_pc_ + 1));
     break;
   case 0x37:
     SCF();
@@ -630,7 +661,7 @@ void CPU::Execute(Instruction instruction) {
     ADD_HL(reg_sp_);
     break;
   case 0x3A:
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_a_, ReadMMU(reg_hl_.GetRegister()));
     reg_hl_.SetRegister(reg_hl_.GetRegister() - 1);
     break;
   case 0x3B:
@@ -643,7 +674,7 @@ void CPU::Execute(Instruction instruction) {
     DEC(reg_a_);
     break;
   case 0x3E:
-    LD(&reg_a_, mmu_->ReadMemory(reg_pc_ + 1));
+    LD(&reg_a_, ReadMMU(reg_pc_ + 1));
     break;
   case 0x3F:
     CCF();
@@ -667,7 +698,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_b_, reg_l_);
     break;
   case 0x46: // LD B, (HL)
-    LD(&reg_b_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_b_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x47: // LD B, A
     LD(&reg_b_, reg_a_);
@@ -691,7 +722,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_c_, reg_l_);
     break;
   case 0x4E: // LD C, (HL)
-    LD(&reg_c_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_c_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x4F: // LD C, A
     LD(&reg_c_, reg_a_);
@@ -715,7 +746,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_d_, reg_l_);
     break;
   case 0x56: // LD D, (HL)
-    LD(&reg_d_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_d_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x57: // LD D, A
     LD(&reg_d_, reg_a_);
@@ -739,7 +770,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_e_, reg_l_);
     break;
   case 0x5E: // LD E, (HL)
-    LD(&reg_e_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_e_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x5F: // LD E, A
     LD(&reg_e_, reg_a_);
@@ -763,7 +794,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_h_, reg_l_);
     break;
   case 0x66: // LD H, (HL)
-    LD(&reg_h_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_h_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x67: // LD H, A
     LD(&reg_h_, reg_a_);
@@ -787,34 +818,34 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_l_, reg_l_);
     break;
   case 0x6E: // LD L, (HL)
-    LD(&reg_l_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_l_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x6F: // LD L, A
     LD(&reg_l_, reg_a_);
     break;
   case 0x70: // LD (HL), B
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_b_);
+    WriteMMU(reg_hl_.GetRegister(), reg_b_);
     break;
   case 0x71: // LD (HL), C
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_c_);
+    WriteMMU(reg_hl_.GetRegister(), reg_c_);
     break;
   case 0x72: // LD (HL), D
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_d_);
+    WriteMMU(reg_hl_.GetRegister(), reg_d_);
     break;
   case 0x73: // LD (HL), E
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_e_);
+    WriteMMU(reg_hl_.GetRegister(), reg_e_);
     break;
   case 0x74: // LD (HL), H
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_h_);
+    WriteMMU(reg_hl_.GetRegister(), reg_h_);
     break;
   case 0x75: // LD (HL), L
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_l_);
+    WriteMMU(reg_hl_.GetRegister(), reg_l_);
     break;
   case 0x76:
     HALT();
     break;
   case 0x77: // LD (HL), A
-    mmu_->WriteMemory(reg_hl_.GetRegister(), reg_a_);
+    WriteMMU(reg_hl_.GetRegister(), reg_a_);
     break;
   case 0x78: // LD A, B
     LD(&reg_a_, reg_b_);
@@ -835,7 +866,7 @@ void CPU::Execute(Instruction instruction) {
     LD(&reg_a_, reg_l_);
     break;
   case 0x7E: // LD A, (HL)
-    LD(&reg_a_, mmu_->ReadMemory(reg_hl_.GetRegister()));
+    LD(&reg_a_, ReadMMU(reg_hl_.GetRegister()));
     break;
   case 0x7F: // LD A, A
     LD(&reg_a_, reg_a_);
@@ -859,7 +890,7 @@ void CPU::Execute(Instruction instruction) {
     ADD(reg_l_);
     break;
   case 0x86: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     ADD(byte);
     break;
   }
@@ -885,7 +916,7 @@ void CPU::Execute(Instruction instruction) {
     ADC(reg_l_);
     break;
   case 0x8E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     ADC(byte);
     break;
   }
@@ -911,7 +942,7 @@ void CPU::Execute(Instruction instruction) {
     SUB(reg_l_);
     break;
   case 0x96: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SUB(byte);
     break;
   }
@@ -937,7 +968,7 @@ void CPU::Execute(Instruction instruction) {
     SBC(reg_l_);
     break;
   case 0x9E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SBC(byte);
     break;
   }
@@ -963,7 +994,7 @@ void CPU::Execute(Instruction instruction) {
     AND(reg_l_);
     break;
   case 0xA6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     AND(byte);
     break;
   }
@@ -989,7 +1020,7 @@ void CPU::Execute(Instruction instruction) {
     XOR(reg_l_);
     break;
   case 0xAE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     XOR(byte);
     break;
   }
@@ -1015,7 +1046,7 @@ void CPU::Execute(Instruction instruction) {
     OR(reg_l_);
     break;
   case 0xB6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     OR(byte);
     break;
   }
@@ -1041,7 +1072,7 @@ void CPU::Execute(Instruction instruction) {
     CP(reg_l_);
     break;
   case 0xBE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     CP(byte);
     break;
   }
@@ -1076,7 +1107,7 @@ void CPU::Execute(Instruction instruction) {
     PUSH(reg_bc_.GetRegister());
     break;
   case 0xC6: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     ADD(byte);
     break;
   }
@@ -1098,7 +1129,7 @@ void CPU::Execute(Instruction instruction) {
     }
     break;
   case 0xCB:
-    ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
+    ExecuteExtended(extended_instructions.at(ReadMMU(reg_pc_ + 1)));
     break;
   case 0xCC:
     if (GetFlag(kFlagZ)) {
@@ -1110,7 +1141,7 @@ void CPU::Execute(Instruction instruction) {
     CALL();
     break;
   case 0xCE: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     ADC(byte);
     break;
   }
@@ -1144,7 +1175,7 @@ void CPU::Execute(Instruction instruction) {
     PUSH(reg_de_.GetRegister());
     break;
   case 0xD6: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     SUB(byte);
     break;
   }
@@ -1178,7 +1209,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xDD:
     break;
   case 0xDE: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     SBC(byte);
     break;
   } break;
@@ -1186,9 +1217,8 @@ void CPU::Execute(Instruction instruction) {
     RST(rst_jump_vectors_[3]);
     break;
   case 0xE0: {
-    uint16_t word =
-        static_cast<uint16_t>(0xFF00 + mmu_->ReadMemory(reg_pc_ + 1));
-    mmu_->WriteMemory(word, reg_a_);
+    uint16_t word = static_cast<uint16_t>(0xFF00 + ReadMMU(reg_pc_ + 1));
+    WriteMMU(word, reg_a_);
     break;
   }
   case 0xE1:
@@ -1196,7 +1226,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xE2:
     // MSB == 0xFF, so the possible range is 0xFF00 - 0xFFFF
-    mmu_->WriteMemory(MakeWord(0xFF, reg_c_), reg_a_);
+    WriteMMU(MakeWord(0xFF, reg_c_), reg_a_);
     break;
   case 0xE3:
     break;
@@ -1206,7 +1236,7 @@ void CPU::Execute(Instruction instruction) {
     PUSH(reg_hl_.GetRegister());
     break;
   case 0xE6: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     AND(byte);
     break;
   }
@@ -1220,9 +1250,8 @@ void CPU::Execute(Instruction instruction) {
     JP_HL();
     break;
   case 0xEA: {
-    uint16_t word =
-        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1));
-    mmu_->WriteMemory(word, reg_a_);
+    uint16_t word = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1));
+    WriteMMU(word, reg_a_);
     break;
   }
   case 0xEB:
@@ -1232,7 +1261,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xED:
     break;
   case 0xEE: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     XOR(byte);
     break;
   }
@@ -1240,12 +1269,11 @@ void CPU::Execute(Instruction instruction) {
     RST(rst_jump_vectors_[5]);
     break;
   case 0xF0:
-    if (mmu_->ReadMemory(reg_pc_ + 1) == 0x44) {
+    if (ReadMMU(reg_pc_ + 1) == 0x44) {
       reg_a_ = 0x90;
     } else {
-      uint16_t word =
-          static_cast<uint16_t>(0xFF00 + mmu_->ReadMemory(reg_pc_ + 1));
-      LD(&reg_a_, mmu_->ReadMemory(word));
+      uint16_t word = static_cast<uint16_t>(0xFF00 + ReadMMU(reg_pc_ + 1));
+      LD(&reg_a_, ReadMMU(word));
     }
     break;
   case 0xF1:
@@ -1253,7 +1281,7 @@ void CPU::Execute(Instruction instruction) {
     *reg_af_.low_ &= 0xF0; // don't modify flags register
     break;
   case 0xF2:
-    LD(&reg_a_, mmu_->ReadMemory(MakeWord(0xFF, reg_c_)));
+    LD(&reg_a_, ReadMMU(MakeWord(0xFF, reg_c_)));
     break;
   case 0xF3:
     DI();
@@ -1264,7 +1292,7 @@ void CPU::Execute(Instruction instruction) {
     PUSH(reg_af_.GetRegister());
     break;
   case 0xF6: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     OR(byte);
     break;
   }
@@ -1272,7 +1300,7 @@ void CPU::Execute(Instruction instruction) {
     RST(rst_jump_vectors_[6]);
     break;
   case 0xF8: {
-    int immediate = static_cast<char>(mmu_->ReadMemory(reg_pc_ + 1));
+    int immediate = static_cast<char>(ReadMMU(reg_pc_ + 1));
     int eval = reg_sp_ + immediate;
     int test_carries = reg_sp_ ^ immediate ^ eval;
     reg_hl_.SetRegister(immediate + reg_sp_);
@@ -1286,8 +1314,8 @@ void CPU::Execute(Instruction instruction) {
     reg_sp_ = reg_hl_.GetRegister();
     break;
   case 0xFA: {
-    uint8_t byte = mmu_->ReadMemory(
-        MakeWord(mmu_->ReadMemory(reg_pc_ + 2), mmu_->ReadMemory(reg_pc_ + 1)));
+    uint8_t byte =
+        ReadMMU(MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
     LD(&reg_a_, byte);
     break;
   }
@@ -1299,7 +1327,7 @@ void CPU::Execute(Instruction instruction) {
   case 0xFD:
     break;
   case 0xFE: {
-    uint8_t byte = mmu_->ReadMemory(reg_pc_ + 1);
+    uint8_t byte = ReadMMU(reg_pc_ + 1);
     CP(byte);
     break;
   }
@@ -1333,9 +1361,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RLC(reg_l_);
     break;
   case 0x06: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RLC(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x07:
@@ -1360,9 +1388,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RRC(reg_l_);
     break;
   case 0x0E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RRC(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x0F:
@@ -1387,9 +1415,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RL(reg_l_);
     break;
   case 0x16: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RL(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x17:
@@ -1414,9 +1442,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RR(reg_l_);
     break;
   case 0x1E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RR(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x1F:
@@ -1441,9 +1469,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SLA(reg_l_);
     break;
   case 0x26: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SLA(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x27:
@@ -1468,9 +1496,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SRA(reg_l_);
     break;
   case 0x2E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SRA(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x2F:
@@ -1495,9 +1523,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SWAP(reg_l_);
     break;
   case 0x36: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SWAP(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x37:
@@ -1522,9 +1550,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SRL(reg_l_);
     break;
   case 0x3E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SRL(byte);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x3F:
@@ -1549,9 +1577,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 0);
     break;
   case 0x46: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 0);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x47:
@@ -1576,9 +1604,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 1);
     break;
   case 0x4E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 1);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x4F:
@@ -1603,9 +1631,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 2);
     break;
   case 0x56: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 2);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x57:
@@ -1630,9 +1658,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 3);
     break;
   case 0x5E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 3);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x5F:
@@ -1657,9 +1685,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 4);
     break;
   case 0x66: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 4);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x67:
@@ -1684,9 +1712,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 5);
     break;
   case 0x6E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 5);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x6F:
@@ -1711,9 +1739,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 6);
     break;
   case 0x76: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 6);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x77:
@@ -1738,9 +1766,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     BIT(reg_l_, 7);
     break;
   case 0x7E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     BIT(byte, 7);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x7F:
@@ -1765,9 +1793,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 0);
     break;
   case 0x86: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 0);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x87:
@@ -1792,9 +1820,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 1);
     break;
   case 0x8E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 1);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x8F:
@@ -1819,9 +1847,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 2);
     break;
   case 0x96: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 2);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x97:
@@ -1846,9 +1874,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 3);
     break;
   case 0x9E: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 3);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0x9F:
@@ -1873,9 +1901,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 4);
     break;
   case 0xA6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 4);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xA7:
@@ -1900,9 +1928,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 5);
     break;
   case 0xAE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 5);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xAF:
@@ -1927,9 +1955,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 6);
     break;
   case 0xB6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 6);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xB7:
@@ -1954,9 +1982,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     RES(reg_l_, 7);
     break;
   case 0xBE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     RES(byte, 7);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xBF:
@@ -1981,9 +2009,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 0);
     break;
   case 0xC6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 0);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xC7:
@@ -2008,9 +2036,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 1);
     break;
   case 0xCE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 1);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xCF:
@@ -2035,9 +2063,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 2);
     break;
   case 0xD6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 2);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xD7:
@@ -2062,9 +2090,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 3);
     break;
   case 0xDE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 3);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xDF:
@@ -2089,9 +2117,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 4);
     break;
   case 0xE6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 4);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xE7:
@@ -2116,9 +2144,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 5);
     break;
   case 0xEE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 5);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xEF:
@@ -2143,9 +2171,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 6);
     break;
   case 0xF6: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 6);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xF7:
@@ -2170,9 +2198,9 @@ void CPU::ExecuteExtended(Instruction instruction) {
     SET(reg_l_, 7);
     break;
   case 0xFE: {
-    uint8_t byte = mmu_->ReadMemory(reg_hl_.GetRegister());
+    uint8_t byte = ReadMMU(reg_hl_.GetRegister());
     SET(byte, 7);
-    mmu_->WriteMemory(reg_hl_.GetRegister(), byte);
+    WriteMMU(reg_hl_.GetRegister(), byte);
     break;
   }
   case 0xFF:
