@@ -9,7 +9,7 @@ class Cartridge {
 public:
   std::vector<uint8_t> data;
 
-  Cartridge() : data(LoadCartridge("../roms/blargg/02.gb")){};
+  Cartridge() : data(LoadCartridge("../roms/rom.gb")){};
   ~Cartridge() = default;
   std::vector<uint8_t> LoadCartridge(const std::string &name);
 };

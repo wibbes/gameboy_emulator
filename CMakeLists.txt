@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project("gameboy_emulator")
-set (SOURCES "main.cc" "src/cpu.cc" "src/cartridge.cc" "src/mmu.cc" "src/timer.cc")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+find_package(SDL3 REQUIRED)
+
+set (SOURCES "main.cc" "src/cpu.cc" "src/cartridge.cc" "src/mmu.cc" "src/timer.cc" "src/ppu.cc")
 set(CMAKE_BUILD_TYPE Debug)
 add_executable(gameboy_emulator ${SOURCES})
+target_link_libraries(gameboy_emulator PRIVATE SDL3::SDL3)
