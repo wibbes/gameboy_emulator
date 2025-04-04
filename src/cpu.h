@@ -5,8 +5,8 @@
 #include "instructions.h"
 #include "mmu.h"
 #include "timer.h"
+#include "ppu.h"
 #include <cstdint>
-#include <iostream>
 #include <memory>
 
 class Register16 {
