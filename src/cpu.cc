@@ -50,7 +50,11 @@ void CPU::RST(uint8_t jmp_vector) {
 }
 
 void CPU::JP() {
+  /*
+   * M1: opcode, M2: lo, M3: hi, M4: set reg_pc_
+   * */
   reg_pc_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1));
+  TickMCycle();
   reg_pc_ -= 3;
 }
 
@@ -413,11 +417,14 @@ void CPU::CheckEI(uint8_t opcode) {
 bool CPU::CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction) {
   if (cycles_for_instruction == cycles_elapsed_) {
     return true;
+    cycles_elapsed_ = 0;
+    return true;
   } else {
     std::cout << "WRONG CYCLES FOR 0x" << std::hex << +opcode << " "
               << instructions.at(opcode).mnemonic_ << "\nEXPECTED "
               << +cycles_for_instruction << ", RAN " << +cycles_elapsed_
               << '\n';
+    cycles_elapsed_ = 0;
     return false;
   }
   return true;
@@ -426,6 +433,7 @@ bool CPU::CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction) {
 void CPU::Run() { Step(); }
 
 void CPU::Step() {
+  cycles_elapsed_ = 0;
   CheckInterrupts();
   if (CheckHalt())
     return;
@@ -570,11 +578,12 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JR();
+    } else {
+      TickMCycle();
     }
     break;
   case 0x21:
     LD(reg_hl_, MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
-
     break;
   case 0x22:
     WriteMMU(reg_hl_.GetRegister(), reg_a_);
