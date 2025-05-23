@@ -15,7 +15,7 @@ class MMU {
 public:
   std::unique_ptr<InterruptRegister> ie_, if_;
   MMU(std::shared_ptr<Cartridge> cart, std::shared_ptr<Timer> timer)
-      : memory_(65535), timer_(timer),
+      : memory_(65536), timer_(timer),
         ie_(std::make_unique<InterruptRegister>()),
         if_(std::make_unique<InterruptRegister>()) {
     timer_->LinkIF(if_.get());
