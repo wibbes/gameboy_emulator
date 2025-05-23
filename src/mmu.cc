@@ -29,32 +29,31 @@ void MMU::WriteMemory(uint16_t address, uint8_t value) {
     std::cout << std::hex << value;
     break;
   case 0xFF04: // DIV
-    memory_[0xFF04] = 0x00;
+    memory_.at(0xFF04) = 0x00;
     timer_->Write(0xFF04, 0x00);
     break;
   case 0xFF05: // TIMA
-    memory_[0xFF05] = value;
+    memory_.at(0xFF05) = value;
     timer_->Write(0xFF05, value);
     break;
   case 0xFF06: // TMA
-    memory_[0xFF06] = value;
+    memory_.at(0xFF06) = value;
     timer_->Write(0xFF06, value);
     break;
   case 0xFF07: // TAC
-    memory_[0xFF07] = value;
-    std::cout << memory_[0xFf07] << '\n';
+    memory_.at(0xFF07) = value;
     timer_->Write(0xFF07, value);
     break;
   case 0xFF0F: // interrupt flags
     if_->SetState(value);
-    memory_[0xFF0F] = value;
+    memory_.at(0xFF0F) = value;
     break;
   case 0xFFFF: // interrupt flags
     ie_->SetState(value);
-    memory_[0xFFFF] = value;
+    memory_.at(0xFFFF) = value;
     break;
   default:
-    memory_[address] = value;
+    memory_.at(address) = value;
     break;
   }
 }
@@ -80,6 +79,6 @@ uint8_t MMU::ReadMemory(uint16_t address) {
   case 0xFF44:
     return 0x90;
   default:
-    return memory_[address];
+    return memory_.at(address);
   }
 }
