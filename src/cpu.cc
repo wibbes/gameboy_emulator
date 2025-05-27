@@ -415,17 +415,6 @@ void CPU::CheckEI(uint8_t opcode) {
 }
 
 bool CPU::CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction) {
-  if (cycles_for_instruction == cycles_elapsed_) {
-    return true;
-    cycles_elapsed_ = 0;
-    return true;
-  } else {
-    std::cout << "WRONG CYCLES FOR 0x" << std::hex << +opcode << " "
-              << instructions.at(opcode).mnemonic_ << "\nEXPECTED "
-              << +cycles_for_instruction << ", RAN " << +cycles_elapsed_
-              << '\n';
-    cycles_elapsed_ = 0;
-    return false;
   bool correct = true;
   if (cycles_for_instruction != cycles_elapsed_) {
     std::cout << "Wrong cycle count for 0x" << std::hex << std::uppercase
