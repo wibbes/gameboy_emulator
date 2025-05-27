@@ -426,8 +426,17 @@ bool CPU::CheckCycles(uint8_t opcode, uint8_t cycles_for_instruction) {
               << '\n';
     cycles_elapsed_ = 0;
     return false;
+  bool correct = true;
+  if (cycles_for_instruction != cycles_elapsed_) {
+    std::cout << "Wrong cycle count for 0x" << std::hex << std::uppercase
+              << +opcode << " " << instructions.at(opcode).mnemonic_
+              << "\nExpected " << +cycles_for_instruction << ", Ran "
+              << +cycles_elapsed_ << '\n';
+    correct = false;
   }
-  return true;
+  cycles_elapsed_ = 0;
+  conditional_m_cycles_ = 0;
+  return correct;
 }
 
 void CPU::Run() { Step(); }
