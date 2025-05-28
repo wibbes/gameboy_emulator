@@ -493,12 +493,14 @@ void CPU::Execute(Instruction instruction) {
     RLC(reg_a_);
     ClearFlag(kFlagZ);
     break;
-  case 0x08: // LD (a16), SP
-    WriteMMU(MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)),
-             reg_sp_ & 0xFF);
-    WriteMMU(MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)) + 1,
-             (reg_sp_ & 0xFF00) >> 8);
+  case 0x08: { // LD (a16), SP
+    uint8_t lsb = ReadMMU(reg_pc_ + 1);
+    uint8_t msb = ReadMMU(reg_pc_ + 2);
+    uint16_t word = MakeWord(msb, lsb);
+    WriteMMU(word, reg_sp_ & 0xFF);
+    WriteMMU(word + 1, (reg_sp_ & 0xFF00) >> 8);
     break;
+  }
   case 0x09:
     ADD_HL(reg_bc_.GetRegister());
     break;
@@ -576,7 +578,6 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JR();
-    } else {
       TickMCycle();
     }
     break;
