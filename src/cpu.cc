@@ -35,6 +35,7 @@ void CPU::LD(uint8_t *reg, uint8_t value) { *reg = value; }
 void CPU::PUSH(uint16_t value) {
   WriteMMU(reg_sp_ - 1, static_cast<uint8_t>((value >> 8) & 0xFF));
   WriteMMU(reg_sp_ - 2, static_cast<uint8_t>(value & 0xFF));
+  TickMCycle();
   reg_sp_ -= 2;
 }
 
@@ -71,10 +72,13 @@ void CPU::JR() { reg_pc_ += static_cast<int8_t>(ReadMMU(reg_pc_ + 1)); }
 
 void CPU::RET() {
   reg_pc_ = MakeWord(ReadMMU(reg_sp_ + 1), ReadMMU(reg_sp_)) - 1;
+  /* Add one M cycle for MakeWord */
+  TickMCycle();
   reg_sp_ += 2;
 }
 
 void CPU::CALL() {
+
   PUSH(reg_pc_ + 3);
   reg_pc_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)) - 3;
 }
@@ -255,13 +259,16 @@ void CPU::ADD_HL(uint16_t value) {
   ((test_carries & 0x1000) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
   ((test_carries & 0x10000) != 0) ? SetFlag(kFlagC) : ClearFlag(kFlagC);
   reg_hl_.SetRegister(eval);
+  TickMCycle();
 }
 
 void CPU::ADD_SP() {
   int immediate = static_cast<char>(ReadMMU(reg_pc_ + 1));
   int eval = reg_sp_ + immediate;
+  TickMCycle();
   int test_carries = reg_sp_ ^ immediate ^ eval;
   reg_sp_ = eval;
+  TickMCycle();
   ClearFlag(kFlagZ);
   ClearFlag(kFlagN);
   (test_carries & 0x10) != 0 ? SetFlag(kFlagH) : ClearFlag(kFlagH);
@@ -432,14 +439,17 @@ void CPU::Run() { Step(); }
 
 void CPU::Step() {
   cycles_elapsed_ = 0;
+  conditional_m_cycles_ = 0;
   CheckInterrupts();
   if (CheckHalt())
     return;
-  uint8_t opcode = mmu_->ReadMemory(reg_pc_);
-  TickMCycle();
+  uint8_t opcode = ReadMMU(reg_pc_);
   Execute(instructions.at(opcode));
   CheckEI(opcode);
-  if (!CheckCycles(opcode, instructions.at(opcode).cycles_))
+  // std::cout << "Inst: " << +instructions.at(opcode).cycles_
+  // << " Cond: " << +conditional_m_cycles_ << '\n';
+  if (!CheckCycles(opcode,
+                   instructions.at(opcode).cycles_ + conditional_m_cycles_))
     exit(1);
 }
 
@@ -479,6 +489,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x03:
     INC(reg_bc_);
+    TickMCycle();
     break;
   case 0x04:
     INC(reg_b_);
@@ -509,6 +520,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x0B:
     DEC(reg_bc_);
+    TickMCycle();
     break;
   case 0x0C:
     INC(reg_c_);
@@ -534,6 +546,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x13:
     INC(reg_de_);
+    TickMCycle();
     break;
   case 0x14:
     INC(reg_d_);
@@ -559,6 +572,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x1B:
     DEC(reg_de_);
+    TickMCycle();
     break;
   case 0x1C:
     INC(reg_e_);
@@ -578,8 +592,11 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JR();
-      TickMCycle();
+      // TickMCycle();
     }
+    /* Fetching the flag status counts as a M cycle for all conditional-cycle
+     * instructions */
+    TickMCycle();
     break;
   case 0x21:
     LD(reg_hl_, MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1)));
@@ -590,6 +607,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x23:
     INC(reg_hl_);
+    TickMCycle();
     break;
   case 0x24:
     INC(reg_h_);
@@ -608,6 +626,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 1;
       JR();
     }
+    TickMCycle();
     break;
   case 0x29:
     ADD_HL(reg_hl_.GetRegister());
@@ -618,6 +637,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x2B:
     DEC(reg_hl_);
+    TickMCycle();
     break;
   case 0x2C:
     INC(reg_l_);
@@ -636,6 +656,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 1;
       JR();
     }
+    TickMCycle();
     break;
   case 0x31:
     reg_sp_ = MakeWord(ReadMMU(reg_pc_ + 2), ReadMMU(reg_pc_ + 1));
@@ -646,6 +667,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x33:
     ++reg_sp_;
+    TickMCycle();
     break;
   case 0x34:
     INC_HL();
@@ -664,6 +686,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 1;
       JR();
     }
+    TickMCycle();
     break;
   case 0x39:
     ADD_HL(reg_sp_);
@@ -674,6 +697,7 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0x3B:
     --reg_sp_;
+    TickMCycle();
     break;
   case 0x3C:
     INC(reg_a_);
@@ -1092,6 +1116,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 3;
       RET();
     }
+    TickMCycle();
     break;
   case 0xC1:
     POP(reg_bc_);
@@ -1100,6 +1125,13 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JP();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
     break;
   case 0xC3:
@@ -1109,6 +1141,13 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 3;
       CALL();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
     break;
   case 0xC5:
@@ -1124,8 +1163,10 @@ void CPU::Execute(Instruction instruction) {
     break;
   case 0xC8:
     if (GetFlag(kFlagZ)) {
+      conditional_m_cycles_ = 3;
       RET();
     }
+    TickMCycle();
     break;
   case 0xC9:
     RET();
@@ -1134,15 +1175,32 @@ void CPU::Execute(Instruction instruction) {
     if (GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 1;
       JP();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
+    TickMCycle();
     break;
   case 0xCB:
-    ExecuteExtended(extended_instructions.at(ReadMMU(reg_pc_ + 1)));
+    /* Use direct MMU read instead of ReadMMU, otherwise cycle count is exceeded
+     */
+    ExecuteExtended(extended_instructions.at(mmu_->ReadMemory(reg_pc_ + 1)));
     break;
   case 0xCC:
     if (GetFlag(kFlagZ)) {
       conditional_m_cycles_ = 3;
       CALL();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
     break;
   case 0xCD:
@@ -1161,6 +1219,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 3;
       RET();
     }
+    TickMCycle();
     break;
   case 0xD1:
     POP(reg_de_);
@@ -1169,7 +1228,15 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JP();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
+    TickMCycle();
     break;
   case 0xD3:
     break;
@@ -1177,6 +1244,13 @@ void CPU::Execute(Instruction instruction) {
     if (!GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       CALL();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
     break;
   case 0xD5:
@@ -1195,6 +1269,7 @@ void CPU::Execute(Instruction instruction) {
       conditional_m_cycles_ = 3;
       RET();
     }
+    TickMCycle();
     break;
   case 0xD9:
     RET();
@@ -1204,7 +1279,15 @@ void CPU::Execute(Instruction instruction) {
     if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 1;
       JP();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
+    TickMCycle();
     break;
   case 0xDB:
     break;
@@ -1212,6 +1295,13 @@ void CPU::Execute(Instruction instruction) {
     if (GetFlag(kFlagC)) {
       conditional_m_cycles_ = 3;
       CALL();
+    } else {
+      /*
+       * Operand is read even when this condition evaluates to false!
+       * Simulate MSB, LSB read with two M cycle ticks
+       */
+      TickMCycle();
+      TickMCycle();
     }
     break;
   case 0xDD:
@@ -1277,12 +1367,14 @@ void CPU::Execute(Instruction instruction) {
     RST(rst_jump_vectors_[5]);
     break;
   case 0xF0:
-    if (ReadMMU(reg_pc_ + 1) == 0x44) {
+    if (mmu_->ReadMemory(reg_pc_ + 1) == 0x44) {
       reg_a_ = 0x90;
+      TickMCycle();
     } else {
       uint16_t word = static_cast<uint16_t>(0xFF00 + ReadMMU(reg_pc_ + 1));
-      LD(&reg_a_, ReadMMU(word));
+      LD(&reg_a_, mmu_->ReadMemory(word));
     }
+    TickMCycle();
     break;
   case 0xF1:
     POP(reg_af_);
@@ -1312,6 +1404,7 @@ void CPU::Execute(Instruction instruction) {
     int eval = reg_sp_ + immediate;
     int test_carries = reg_sp_ ^ immediate ^ eval;
     reg_hl_.SetRegister(immediate + reg_sp_);
+    TickMCycle();
     ClearFlag(kFlagZ);
     ClearFlag(kFlagN);
     ((test_carries & 0x10) != 0) ? SetFlag(kFlagH) : ClearFlag(kFlagH);
@@ -1320,6 +1413,7 @@ void CPU::Execute(Instruction instruction) {
   }
   case 0xF9:
     reg_sp_ = reg_hl_.GetRegister();
+    TickMCycle();
     break;
   case 0xFA: {
     uint8_t byte =
