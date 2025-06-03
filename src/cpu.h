@@ -33,7 +33,8 @@ public:
         reg_hl_(Register16(&reg_h_, &reg_l_)),
         timer_(std::make_shared<Timer>()),
         mmu_(std::make_shared<MMU>(cartridge, timer_)), ime_(false),
-        halted_(false), halt_bug_(false), ime_enable_pending_(false) {}
+        halted_(false), halt_bug_(false), ime_enable_pending_(false),
+        servicing_interrupt_(false) {}
   ~CPU() = default;
 
   void Run();
@@ -51,7 +52,7 @@ private:
   uint8_t reg_a_, reg_b_, reg_c_, reg_d_, reg_e_, reg_f_, reg_h_, reg_l_,
       conditional_m_cycles_, cycles_elapsed_;
   uint16_t reg_sp_, reg_pc_;
-  bool ime_, halted_, halt_bug_, ime_enable_pending_;
+  bool ime_, halted_, halt_bug_, ime_enable_pending_, servicing_interrupt_;
 
   std::shared_ptr<Timer> timer_;
   std::shared_ptr<MMU> mmu_;

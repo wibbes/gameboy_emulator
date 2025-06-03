@@ -375,11 +375,13 @@ void CPU::CheckInterrupts() {
     for (auto i = 0ull; i < 5; ++i) {
       // If pending interrupt is found, handle it
       if (mmu_->ie_->GetInterrupt(i) && mmu_->if_->GetInterrupt(i)) {
+        servicing_interrupt_ = true;
         HandleInterrupt(i);
         halted_ = false;
       }
     }
   }
+  servicing_interrupt_ = false;
 }
 
 void CPU::WriteMMU(uint16_t address, uint8_t value) {
@@ -397,7 +399,8 @@ void CPU::TickMCycle() {
   Tick();
   Tick();
   Tick();
-  ++cycles_elapsed_;
+  if (!servicing_interrupt_)
+    ++cycles_elapsed_;
 }
 
 bool CPU::CheckHalt() {
