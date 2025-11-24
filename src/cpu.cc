@@ -8,7 +8,7 @@ void Register16::SetRegister(uint16_t value) {
   *low_ = static_cast<uint8_t>(value & 0x00FF);
 }
 
-const uint16_t MakeWord(uint8_t high, uint8_t low) {
+const uint16_t static MakeWord(uint8_t high, uint8_t low) {
   return static_cast<uint16_t>(high << 8 | low & 0x00FF);
 }
 
